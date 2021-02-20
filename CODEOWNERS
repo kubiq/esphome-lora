@@ -53,7 +53,6 @@ esphome/components/mcp9808/* @k7hpn
 esphome/components/network/* @esphome/core
 esphome/components/nextion/* @senexcrenshaw
 esphome/components/nfc/* @jesserockz
-esphome/components/nextion/* @rspaargaren @senexcrenshaw
 esphome/components/ota/* @esphome/core
 esphome/components/output/* @esphome/core
 esphome/components/pid/* @OttoWinter
