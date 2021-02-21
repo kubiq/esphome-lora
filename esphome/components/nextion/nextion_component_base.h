@@ -20,6 +20,8 @@ class NextionComponentBase;
 
 class NextionComponentBase {
  public:
+ virtual ~NextionComponentBase() = default;
+
   void set_variable_name(std::string variable_name, std::string variable_name_to_send = "") {
     variable_name_ = variable_name;
     if (variable_name_to_send.empty()) {

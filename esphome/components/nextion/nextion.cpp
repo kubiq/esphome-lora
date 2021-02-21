@@ -167,8 +167,11 @@ void Nextion::loop() {
 
 // nextion.tech/instruction-set/
 bool Nextion::process_nextion_commands_() {
-  if (this->is_test_debug())
+  if (this->is_test_debug()) {
     ESP_LOGW(TAG, "LOOP sleep : %s", this->is_sleeping() ? "True" : "False");
+    ESP_LOGD("*** HEAP", " Free: %d", ESP.getFreeHeap());
+    ESP_LOGD("*** HEAP", "Total: %d", ESP.getHeapSize());
+  }
 
   if (this->command_data_length_ >= sizeof(command_data_)) {
     ESP_LOGE(TAG, "Command buffer filled, resetting data");
@@ -226,9 +229,14 @@ bool Nextion::process_nextion_commands_() {
 
         if (!this->nextion_queue_.empty() &&
             this->nextion_queue_.front()->get_queue_type() == NextionQueueType::NO_RESULT) {
+          NextionComponentBase *nextion_queue = this->nextion_queue_.front();
+
           if (this->is_test_debug())
-            ESP_LOGW(TAG, "Removing %s from the queue", this->nextion_queue_.front()->get_variable_name().c_str());
+            ESP_LOGW(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
+
           this->nextion_queue_.pop_front();
+          delete nextion_queue;
+
           if (!this->is_setup_) {
             if (this->nextion_queue_.empty()) {
               ESP_LOGD(TAG, "Nextion is setup");
@@ -243,12 +251,17 @@ bool Nextion::process_nextion_commands_() {
       case 0x02:  // invalid Component ID or name was used
 
         if (!this->nextion_queue_.empty()) {
-          auto nextion_queue = this->nextion_queue_.front();
+          NextionComponentBase *nextion_queue = this->nextion_queue_.front();
+
           if (this->is_test_debug())
             ESP_LOGD(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
 
           ESP_LOGW(TAG, "Nextion reported component ID \"%s\" invalid!", nextion_queue->get_variable_name().c_str());
           this->nextion_queue_.pop_front();
+          if (nextion_queue->get_queue_type() == NextionQueueType::NO_RESULT) {
+            delete nextion_queue;
+          }
+
         } else {
           ESP_LOGE(TAG, "Nextion reported component ID invalid but queue is empty!");
         }
@@ -309,7 +322,12 @@ bool Nextion::process_nextion_commands_() {
             ESP_LOGD(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
 
           ESP_LOGW(TAG, "Nextion reported variable name \"%s\" invalid!", nextion_queue->get_variable_name().c_str());
+
           this->nextion_queue_.pop_front();
+          if (nextion_queue->get_queue_type() == NextionQueueType::NO_RESULT) {
+            delete nextion_queue;
+          }
+
         } else {
           ESP_LOGE(TAG, "Nextion reported variable name invalid but queue is empty!");
         }
@@ -341,7 +359,11 @@ bool Nextion::process_nextion_commands_() {
           if (this->is_test_debug())
             ESP_LOGW(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
           this->nextion_queue_.pop_front();
+          if (nextion_queue->get_queue_type() == NextionQueueType::NO_RESULT) {
+            delete nextion_queue;
+          }
         }
+
         break;
       case 0x24:  //  Serial Buffer overflow occurs
         ESP_LOGW(TAG, "Nextion reported Serial Buffer overflow!");
@@ -409,6 +431,9 @@ bool Nextion::process_nextion_commands_() {
 
         nextion_queue->set_state_from_string(buffer, true, false);
         this->nextion_queue_.pop_front();
+        if (nextion_queue->get_queue_type() == NextionQueueType::NO_RESULT) {
+          delete nextion_queue;
+        }
         break;
       }
         //  0x71 0x01 0x02 0x03 0x04 0xFF 0xFF 0xFF
