@@ -707,7 +707,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * Sends commands ignoring of the Nextion has been setup.
    */
   bool ignore_is_setup_ = false;
-  bool print_debug_ = true;
   uint8_t nextion_event_;
   bool nextion_has_event_ = false;
 
@@ -792,7 +791,10 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   char flash_size_[64];
   uint8_t *transfer_buffer_{nullptr};
   void remove_front_no_sensors_();
+#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
   void print_queue_members_();
+#endif
+
   bool upload_first_chunk_sent_ = false;
   uint8_t command_data_[1024];
 

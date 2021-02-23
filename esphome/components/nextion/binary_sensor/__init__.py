@@ -52,6 +52,6 @@ def to_code(config):
         cg.add(var.set_component_id(config[CONF_COMPONENT_ID]))
         cg.add(var.set_page_id(config[CONF_PAGE_ID]))
 
-    elif CONF_COMPONENT_NAME in config or CONF_VARIABLE_NAME in config:
+    if CONF_COMPONENT_NAME in config or CONF_VARIABLE_NAME in config:
         yield setup_component_core_(var, config, ".val")
         cg.add(hub.register_binarysensor_component(var))

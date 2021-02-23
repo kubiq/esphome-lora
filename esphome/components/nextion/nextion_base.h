@@ -33,13 +33,10 @@ class NextionBase {
 
   bool is_sleeping() { return this->is_sleeping_; }
   bool is_setup() { return this->is_setup_; }
-  bool is_test_debug() { return this->test_debug_; }
-  void set_test_debug(bool test_debug) { this->test_debug_ = test_debug; }
 
  protected:
   void set_is_sleeping_(bool is_sleeping) { this->is_sleeping_ = is_sleeping; }
 
-  bool test_debug_ = false;
   bool is_setup_ = false;
   bool is_sleeping_ = false;
 

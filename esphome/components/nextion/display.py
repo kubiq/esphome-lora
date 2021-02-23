@@ -24,7 +24,6 @@ CODEOWNERS = ["@senexcrenshaw"]
 
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor", "switch", "sensor", "text_sensor"]
-CONF_TEST_DEBUG = "test_debug"
 
 SleepTrigger = nextion_ns.class_("SleepTrigger", automation.Trigger.template())
 WakeTrigger = nextion_ns.class_("WakeTrigger", automation.Trigger.template())
@@ -48,7 +47,6 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_TOUCH_SLEEP_TIMEOUT): cv.int_range(min=3, max=65535),
             cv.Optional(CONF_WAKE_UP_PAGE): cv.positive_int,
             cv.Optional(CONF_AUTO_WAKE_ON_TOUCH, default=True): cv.boolean,
-            cv.Optional(CONF_TEST_DEBUG, default=False): cv.boolean,
         }
     )
     .extend(cv.polling_component_schema("5s"))
@@ -82,9 +80,6 @@ def to_code(config):
 
     if CONF_AUTO_WAKE_ON_TOUCH in config:
         cg.add(var.set_auto_wake_on_touch_internal(config[CONF_AUTO_WAKE_ON_TOUCH]))
-
-    if CONF_TEST_DEBUG in config:
-        cg.add(var.set_test_debug(config[CONF_TEST_DEBUG]))
 
     yield display.register_display(var, config)
 
