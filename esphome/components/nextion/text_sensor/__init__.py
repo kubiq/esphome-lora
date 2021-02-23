@@ -3,9 +3,9 @@ import esphome.config_validation as cv
 import esphome.codegen as cg
 from esphome.const import CONF_ID
 
-from . import nextion_ns, CONF_NEXTION_ID
+from .. import nextion_ns, CONF_NEXTION_ID
 
-from .base_component import (
+from ..base_component import (
     setup_component_core_,
     CONFIG_TEXT_COMPONENT_SCHEMA,
 )

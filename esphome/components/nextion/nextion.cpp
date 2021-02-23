@@ -90,16 +90,16 @@ void Nextion::update_all_components() {
     return;
 
   for (auto *binarysensortype : this->binarysensortype_) {
-    binarysensortype->update();
+    binarysensortype->update_component();
   }
   for (auto *sensortype : this->sensortype_) {
-    sensortype->update();
+    sensortype->update_component();
   }
   for (auto *switchtype : this->switchtype_) {
-    switchtype->update();
+    switchtype->update_component();
   }
   for (auto *textsensortype : this->textsensortype_) {
-    textsensortype->update();
+    textsensortype->update_component();
   }
 }
 
@@ -733,7 +733,7 @@ void Nextion::set_nextion_sensor_state(NextionQueueType queue_type, std::string 
     case NextionQueueType::SENSOR: {
       for (auto *sensor : this->sensortype_) {
         if (name == sensor->get_variable_name()) {
-          sensor->set_state(state);
+          sensor->set_state(state, true, true);
           break;
         }
       }
@@ -742,7 +742,7 @@ void Nextion::set_nextion_sensor_state(NextionQueueType queue_type, std::string 
     case NextionQueueType::BINARY_SENSOR: {
       for (auto *sensor : this->binarysensortype_) {
         if (name == sensor->get_variable_name()) {
-          sensor->set_state(state != 0);
+          sensor->set_state(state != 0, true, true);
           break;
         }
       }
@@ -760,7 +760,7 @@ void Nextion::set_nextion_sensor_state(NextionQueueType queue_type, std::string 
     case NextionQueueType::SWITCH: {
       for (auto *sensor : this->switchtype_) {
         if (name == sensor->get_variable_name()) {
-          sensor->set_state(state != 0);
+          sensor->set_state(state != 0, true, true);
           break;
         }
       }
@@ -774,7 +774,7 @@ void Nextion::set_nextion_text_state(std::string name, std::string state) {
 
   for (auto *sensor : this->textsensortype_) {
     if (name == sensor->get_variable_name()) {
-      sensor->set_state(state);
+      sensor->set_state(state, true, true);
       break;
     }
   }
@@ -799,22 +799,22 @@ void Nextion::all_components_send_state_(bool ignore_needs_update) {
   }
 }
 
-void Nextion::updates_components_by_page_prefix(std::string page) {
+void Nextion::update_components_by_prefix(std::string page) {
   for (auto *binarysensortype : this->binarysensortype_) {
     if (binarysensortype->get_variable_name().rfind(page, 0) == 0)
-      binarysensortype->update_component(true);
+      binarysensortype->update_component_settings(true);
   }
   for (auto *sensortype : this->sensortype_) {
     if (sensortype->get_variable_name().rfind(page, 0) == 0)
-      sensortype->update_component(true);
+      sensortype->update_component_settings(true);
   }
   for (auto *switchtype : this->switchtype_) {
     if (switchtype->get_variable_name().rfind(page, 0) == 0)
-      switchtype->update_component(true);
+      switchtype->update_component_settings(true);
   }
   for (auto *textsensortype : this->textsensortype_) {
     if (textsensortype->get_variable_name().rfind(page, 0) == 0)
-      textsensortype->update_component(true);
+      textsensortype->update_component_settings(true);
   }
 }
 
@@ -872,7 +872,7 @@ uint16_t Nextion::recv_ret_string_(String &response, uint32_t timeout, bool recv
  * @param variable_name Name for the queue
  */
 void Nextion::add_no_result_to_queue_(std::string name) {
-  NextionComponentBase *nextion_queue = new NextionComponentBase;
+  nextion::NextionComponentBase *nextion_queue = new nextion::NextionComponentBase;
   nextion_queue->set_variable_name(name);
 
   this->nextion_queue_.push_back(nextion_queue);

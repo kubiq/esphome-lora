@@ -1,8 +1,8 @@
 #pragma once
 #include "esphome/core/component.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
-#include "nextion_component.h"
-#include "nextion_base.h"
+#include "../nextion_component.h"
+#include "../nextion_base.h"
 
 namespace esphome {
 namespace nextion {
@@ -13,10 +13,12 @@ class NextionBinarySensor : public NextionComponent,
                             public PollingComponent {
  public:
   NextionBinarySensor(NextionBase *nextion) { this->nextion_ = nextion; }
+
+  void update_component() override { this->update(); }
   void update() override;
   void send_state_to_nextion() override { this->set_state(this->state, false); };
-  void process_bool(std::string variable_name, bool on);
-  void process_touch(uint8_t page_id, uint8_t component_id, bool on);
+  void process_bool(std::string variable_name, bool on) override;
+  void process_touch(uint8_t page_id, uint8_t component_id, bool on) override;
 
   // Set the components page id for Nextion Touch Component
   void set_page_id(uint8_t page_id) { page_id_ = page_id; }

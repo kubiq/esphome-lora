@@ -11,9 +11,7 @@ class NextionComponent;
 
 class NextionComponent : public NextionComponentBase {
  public:
-  // void set_variable_name(std::string variable_name, std::string variable_name_to_send = "");
-  void update_component(bool ignore_needs_update = false);
-  bool get_needs_to_send_update() { return this->needs_to_send_update_; }
+  void update_component_settings(bool ignore_needs_update = false) override;
 
   void set_background_color(Color bco);
   void set_background_pressed_color(Color bco2);
@@ -24,7 +22,6 @@ class NextionComponent : public NextionComponentBase {
 
  protected:
   NextionBase *nextion_;
-  bool needs_to_send_update_;
 
   bool bco_needs_update_ = false;
   bool bco_is_set_ = false;
@@ -46,7 +43,7 @@ class NextionComponent : public NextionComponentBase {
   bool visible_needs_update_ = false;
   bool visible_is_set_ = false;
 
-  virtual void send_state_to_nextion() = 0;
+  // void send_state_to_nextion() = 0;
 };
 }  // namespace nextion
 }  // namespace esphome

@@ -85,7 +85,7 @@ void NextionSensor::set_state(float state, bool publish, bool send_to_nextion) {
       this->has_state_ = true;
     }
   }
-  this->update_component();
+  this->update_component_settings();
 
   if (this->nextion_->is_test_debug())
     ESP_LOGD(TAG, "Wrote state for sensor \"%s\" state %lf", this->variable_name_.c_str(), state);

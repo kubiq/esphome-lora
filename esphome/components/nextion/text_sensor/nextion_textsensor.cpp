@@ -41,7 +41,7 @@ void NextionTextSensor::set_state(std::string state, bool publish, bool send_to_
     this->has_state_ = true;
   }
 
-  this->update_component();
+  this->update_component_settings();
 
   if (this->nextion_->is_test_debug())
     ESP_LOGD(TAG, "Wrote state for text_sensor \"%s\" state \"%s\"", this->variable_name_.c_str(), state.c_str());

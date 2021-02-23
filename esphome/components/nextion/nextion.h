@@ -4,10 +4,10 @@
 #include "esphome/components/uart/uart.h"
 #include "nextion_base.h"
 #include "nextion_component.h"
-#include "nextion_textsensor.h"
-#include "nextion_switch.h"
-#include "nextion_sensor.h"
-#include "nextion_binarysensor.h"
+// #include "nextion_textsensor.h"
+// #include "nextion_switch.h"
+// #include "nextion_sensor.h"
+// #include "nextion_binarysensor.h"
 #include "esphome/core/color.h"
 
 #if defined(USE_ETHERNET) || defined(USE_WIFI)
@@ -28,6 +28,7 @@ namespace esphome {
 namespace nextion {
 
 class Nextion;
+class NextionComponentBase;
 
 using nextion_writer_t = std::function<void(Nextion &)>;
 
@@ -600,11 +601,11 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 
   // ========== INTERNAL METHODS ==========
   // (In most use cases you won't need these)
-  void register_touch_component(NextionBinarySensor *obj) { this->touch_.push_back(obj); }
-  void register_switch_component(NextionSwitch *obj) { this->switchtype_.push_back(obj); }
-  void register_binarysensor_component(NextionBinarySensor *obj) { this->binarysensortype_.push_back(obj); }
-  void register_sensor_component(NextionSensor *obj) { this->sensortype_.push_back(obj); }
-  void register_textsensor_component(NextionTextSensor *obj) { this->textsensortype_.push_back(obj); }
+  void register_touch_component(NextionComponentBase *obj) { this->touch_.push_back(obj); }
+  void register_switch_component(NextionComponentBase *obj) { this->switchtype_.push_back(obj); }
+  void register_binarysensor_component(NextionComponentBase *obj) { this->binarysensortype_.push_back(obj); }
+  void register_sensor_component(NextionComponentBase *obj) { this->sensortype_.push_back(obj); }
+  void register_textsensor_component(NextionComponentBase *obj) { this->textsensortype_.push_back(obj); }
 
   void setup() override;
   void set_brightness(float brightness) { this->brightness_ = brightness; }
@@ -694,7 +695,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 
   void add_addt_command_to_queue(NextionComponentBase *component) override;
 
-  void updates_components_by_page_prefix(std::string page);
+  void update_components_by_prefix(std::string page);
 
  protected:
   std::deque<NextionComponentBase *> nextion_queue_;
@@ -771,11 +772,11 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   void upload_end_();
 #endif
 
-  std::vector<NextionBinarySensor *> touch_;
-  std::vector<NextionSwitch *> switchtype_;
-  std::vector<NextionSensor *> sensortype_;
-  std::vector<NextionTextSensor *> textsensortype_;
-  std::vector<NextionBinarySensor *> binarysensortype_;
+  std::vector<NextionComponentBase *> touch_;
+  std::vector<NextionComponentBase *> switchtype_;
+  std::vector<NextionComponentBase *> sensortype_;
+  std::vector<NextionComponentBase *> textsensortype_;
+  std::vector<NextionComponentBase *> binarysensortype_;
   CallbackManager<void(bool)> sleep_callback_{};
   CallbackManager<void(bool)> wake_callback_{};
 

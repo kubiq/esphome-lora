@@ -20,7 +20,7 @@ class NextionComponentBase;
 
 class NextionComponentBase {
  public:
- virtual ~NextionComponentBase() = default;
+  virtual ~NextionComponentBase() = default;
 
   void set_variable_name(std::string variable_name, std::string variable_name_to_send = "") {
     variable_name_ = variable_name;
@@ -30,7 +30,14 @@ class NextionComponentBase {
       variable_name_to_send_ = variable_name_to_send;
     }
   }
-
+  virtual void update_component_settings(bool ignore_needs_update = false){};
+  virtual void update_component(){};
+  virtual void process_sensor(std::string variable_name, int state){};
+  virtual void process_touch(uint8_t page_id, uint8_t component_id, bool on){};
+  virtual void process_text(std::string variable_name, std::string text_value){};
+  virtual void process_bool(std::string variable_name, bool on){};
+  virtual void set_state(bool state, bool publish = true, bool send_to_nextion = true){};
+  virtual void set_state(std::string state, bool publish = true, bool send_to_nextion = true){};
   uint8_t get_component_id() { return this->component_id_; }
   void set_component_id(uint8_t component_id) { component_id_ = component_id; }
 
@@ -46,6 +53,10 @@ class NextionComponentBase {
   virtual std::string get_queue_type_string() { return NextionQueueTypeStrings[this->get_queue_type()]; }
   virtual void set_state_from_int(int state_value, bool publish, bool send_to_nextion){};
   virtual void set_state_from_string(std::string state_value, bool publish, bool send_to_nextion){};
+  virtual void send_state_to_nextion(){};
+  bool get_needs_to_send_update() { return this->needs_to_send_update_; }
+  uint8_t get_wave_chan_id() { return this->wave_chan_id_; }
+  void set_wave_max_length(int wave_max_length) { this->wave_max_length_ = wave_max_length; }
 
  protected:
   std::string variable_name_;
@@ -54,6 +65,9 @@ class NextionComponentBase {
   uint8_t component_id_ = 0;
   uint8_t wave_chan_id_ = UINT8_MAX;
   std::vector<uint8_t> wave_buffer_;
+  int wave_max_length_ = 255;
+
+  bool needs_to_send_update_;
 };
 }  // namespace nextion
 }  // namespace esphome

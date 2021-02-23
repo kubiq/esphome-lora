@@ -1,8 +1,8 @@
 #pragma once
 #include "esphome/core/component.h"
 #include "esphome/components/switch/switch.h"
-#include "nextion_component.h"
-#include "nextion_base.h"
+#include "../nextion_component.h"
+#include "../nextion_base.h"
 
 namespace esphome {
 namespace nextion {
@@ -13,9 +13,9 @@ class NextionSwitch : public NextionComponent, public switch_::Switch, public Po
   NextionSwitch(NextionBase *nextion) { this->nextion_ = nextion; }
 
   void update() override;
-
-  void process_bool(std::string variable_name, bool on);
-  void set_state(bool state, bool publish = true, bool send_to_nextion = true);
+  void update_component() override { this->update(); }
+  void process_bool(std::string variable_name, bool on) override;
+  void set_state(bool state, bool publish = true, bool send_to_nextion = true) override;
   void send_state_to_nextion() override { this->set_state(this->state, false); };
   NextionQueueType get_queue_type() override { return NextionQueueType::SWITCH; }
   void set_state_from_string(std::string state_value, bool publish, bool send_to_nextion) override {}

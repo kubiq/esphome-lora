@@ -3,9 +3,9 @@ import esphome.config_validation as cv
 from esphome.components import sensor
 
 from esphome.const import CONF_ID, UNIT_EMPTY, ICON_EMPTY, CONF_COMPONENT_ID
-from . import nextion_ns, CONF_NEXTION_ID
+from .. import nextion_ns, CONF_NEXTION_ID
 
-from .base_component import (
+from ..base_component import (
     setup_component_core_,
     CONFIG_SENSOR_COMPONENT_SCHEMA,
     CONF_VARIABLE_NAME,

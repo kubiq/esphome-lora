@@ -10,7 +10,7 @@ void NextionComponent::set_background_color(Color bco) {
   this->bco_ = bco;
   this->bco_needs_update_ = true;
   this->bco_is_set_ = true;
-  this->update_component();
+  this->update_component_settings();
 }
 void NextionComponent::set_background_pressed_color(Color bco2) {
   if (this->variable_name_ == this->variable_name_to_send_) {
@@ -20,7 +20,7 @@ void NextionComponent::set_background_pressed_color(Color bco2) {
   this->bco2_ = bco2;
   this->bco2_needs_update_ = true;
   this->bco2_is_set_ = true;
-  this->update_component();
+  this->update_component_settings();
 }
 void NextionComponent::set_foreground_color(Color pco) {
   if (this->variable_name_ == this->variable_name_to_send_) {
@@ -29,7 +29,7 @@ void NextionComponent::set_foreground_color(Color pco) {
   this->pco_ = pco;
   this->pco_needs_update_ = true;
   this->pco_is_set_ = true;
-  this->update_component();
+  this->update_component_settings();
 }
 void NextionComponent::set_foreground_pressed_color(Color pco2) {
   if (this->variable_name_ == this->variable_name_to_send_) {
@@ -38,7 +38,7 @@ void NextionComponent::set_foreground_pressed_color(Color pco2) {
   this->pco2_ = pco2;
   this->pco2_needs_update_ = true;
   this->pco2_is_set_ = true;
-  this->update_component();
+  this->update_component_settings();
 }
 void NextionComponent::set_font_id(uint8_t font_id) {
   if (this->variable_name_ == this->variable_name_to_send_) {
@@ -47,7 +47,7 @@ void NextionComponent::set_font_id(uint8_t font_id) {
   this->font_id_ = font_id;
   this->font_id_needs_update_ = true;
   this->font_id_is_set_ = true;
-  this->update_component();
+  this->update_component_settings();
 }
 void NextionComponent::set_visible(bool visible) {
   if (this->variable_name_ == this->variable_name_to_send_) {
@@ -56,10 +56,10 @@ void NextionComponent::set_visible(bool visible) {
   this->visible_ = visible;
   this->visible_needs_update_ = true;
   this->visible_is_set_ = true;
-  this->update_component();
+  this->update_component_settings();
 }
 
-void NextionComponent::update_component(bool ignore_needs_update) {
+void NextionComponent::update_component_settings(bool ignore_needs_update) {
   if (this->nextion_->is_sleeping() || !this->nextion_->is_setup() || !this->visible_is_set_ ||
       (!this->visible_needs_update_ && !this->visible_)) {
     this->needs_to_send_update_ = true;
