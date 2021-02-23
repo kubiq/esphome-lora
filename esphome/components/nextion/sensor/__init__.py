@@ -38,7 +38,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_WAVE_MAX_VALUE, default=100): cv.int_range(
                 min=1, max=1024
             ),
-            cv.Optional(CONF_WAVEFORM_SEND_LAST_VALUE, default=False): cv.boolean,
+            cv.Optional(CONF_WAVEFORM_SEND_LAST_VALUE, default=True): cv.boolean,
         }
     )
     .extend(CONFIG_SENSOR_COMPONENT_SCHEMA)

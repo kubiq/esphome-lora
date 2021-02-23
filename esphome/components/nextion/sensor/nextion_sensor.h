@@ -42,7 +42,7 @@ class NextionSensor : public NextionComponent, public sensor::Sensor, public Pol
   uint32_t wave_maxvalue_ = 255;
 
   float last_value_ = 0;
-  bool send_last_value_ = false;
+  bool send_last_value_ = true;
   void wave_update_();
 };
 }  // namespace nextion
