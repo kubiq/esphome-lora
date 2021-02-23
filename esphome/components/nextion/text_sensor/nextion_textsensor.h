@@ -16,9 +16,12 @@ class NextionTextSensor : public NextionComponent, public text_sensor::TextSenso
   void on_state_changed(std::string state);
 
   void process_text(std::string variable_name, std::string text_value) override;
-  void set_state(std::string state, bool publish = true, bool send_to_nextion = true) override;
 
-  void send_state_to_nextion() override { this->set_state(this->state, false); };
+  void set_state(std::string state, bool publish) override { this->set_state(state, publish, true); }
+  void set_state(std::string state) override { this->set_state(state, true, true); }
+  void set_state(std::string state, bool publish, bool send_to_nextion) override;
+
+  void send_state_to_nextion() override { this->set_state(this->state, false, true); };
   NextionQueueType get_queue_type() override { return NextionQueueType::TEXT_SENSOR; }
   void set_state_from_int(int state_value, bool publish, bool send_to_nextion) override {}
   void set_state_from_string(std::string state_value, bool publish, bool send_to_nextion) override {

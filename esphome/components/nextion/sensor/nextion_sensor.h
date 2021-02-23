@@ -11,7 +11,7 @@ class NextionSensor;
 class NextionSensor : public NextionComponent, public sensor::Sensor, public PollingComponent {
  public:
   NextionSensor(NextionBase *nextion) { this->nextion_ = nextion; }
-  void send_state_to_nextion() override { this->set_state(this->state, false); };
+  void send_state_to_nextion() override { this->set_state(this->state, false, true); };
 
   void update_component() override { this->update(); }
   void update() override;
@@ -21,7 +21,11 @@ class NextionSensor : public NextionComponent, public sensor::Sensor, public Pol
   void set_wave_channel_id(uint8_t wave_chan_id) { this->wave_chan_id_ = wave_chan_id; }
   void set_wave_max_value(uint32_t wave_maxvalue) { this->wave_maxvalue_ = wave_maxvalue; }
   void process_sensor(std::string variable_name, int state) override;
-  void set_state(float state, bool publish = true, bool send_to_nextion = true);
+
+  void set_state(float state) override { this->set_state(state, true, true); }
+  void set_state(float state, bool publish) override { this->set_state(state, publish, true); }
+  void set_state(float state, bool publish, bool send_to_nextion) override;
+
   void set_waveform_send_last_value(bool send_last_value) { this->send_last_value_ = send_last_value; }
   uint8_t get_wave_chan_id() { return this->wave_chan_id_; }
   void set_wave_max_length(int wave_max_length) { this->wave_max_length_ = wave_max_length; }

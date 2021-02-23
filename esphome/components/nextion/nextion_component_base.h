@@ -30,14 +30,28 @@ class NextionComponentBase {
       variable_name_to_send_ = variable_name_to_send;
     }
   }
-  virtual void update_component_settings(bool ignore_needs_update = false){};
+
+  virtual void update_component_settings(){};
+  virtual void update_component_settings(bool ignore_needs_update){};
+
   virtual void update_component(){};
   virtual void process_sensor(std::string variable_name, int state){};
   virtual void process_touch(uint8_t page_id, uint8_t component_id, bool on){};
   virtual void process_text(std::string variable_name, std::string text_value){};
   virtual void process_bool(std::string variable_name, bool on){};
-  virtual void set_state(bool state, bool publish = true, bool send_to_nextion = true){};
-  virtual void set_state(std::string state, bool publish = true, bool send_to_nextion = true){};
+
+  virtual void set_state(float state){};
+  virtual void set_state(float state, bool publish){};
+  virtual void set_state(float state, bool publish, bool send_to_nextion){};
+
+  virtual void set_state(bool state){};
+  virtual void set_state(bool state, bool publish){};
+  virtual void set_state(bool state, bool publish, bool send_to_nextion){};
+
+  virtual void set_state(std::string state) {}
+  virtual void set_state(std::string state, bool publish) {}
+  virtual void set_state(std::string state, bool publish, bool send_to_nextion){};
+
   uint8_t get_component_id() { return this->component_id_; }
   void set_component_id(uint8_t component_id) { component_id_ = component_id; }
 

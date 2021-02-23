@@ -25,7 +25,10 @@ class NextionBinarySensor : public NextionComponent,
   // Set the components component id for Nextion Touch Component
   void set_component_id(uint8_t component_id) { component_id_ = component_id; }
 
-  void set_state(bool state, bool publish = true, bool send_to_nextion = true);
+  void set_state(bool state) override { this->set_state(state, true, true); }
+  void set_state(bool state, bool publish) override { this->set_state(state, publish, true); }
+  void set_state(bool state, bool publish, bool send_to_nextion) override;
+
   NextionQueueType get_queue_type() override { return NextionQueueType::BINARY_SENSOR; }
   void set_state_from_string(std::string state_value, bool publish, bool send_to_nextion) override {}
   void set_state_from_int(int state_value, bool publish, bool send_to_nextion) override {

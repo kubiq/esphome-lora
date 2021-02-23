@@ -15,8 +15,12 @@ class NextionSwitch : public NextionComponent, public switch_::Switch, public Po
   void update() override;
   void update_component() override { this->update(); }
   void process_bool(std::string variable_name, bool on) override;
-  void set_state(bool state, bool publish = true, bool send_to_nextion = true) override;
-  void send_state_to_nextion() override { this->set_state(this->state, false); };
+
+  void set_state(bool state) override { this->set_state(state, true, true); }
+  void set_state(bool state, bool publish) override { this->set_state(state, publish, true); }
+  void set_state(bool state, bool publish, bool send_to_nextion) override;
+
+  void send_state_to_nextion() override { this->set_state(this->state, false, true); };
   NextionQueueType get_queue_type() override { return NextionQueueType::SWITCH; }
   void set_state_from_string(std::string state_value, bool publish, bool send_to_nextion) override {}
   void set_state_from_int(int state_value, bool publish, bool send_to_nextion) override {
