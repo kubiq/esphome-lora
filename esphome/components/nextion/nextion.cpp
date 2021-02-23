@@ -168,7 +168,7 @@ void Nextion::loop() {
 // nextion.tech/instruction-set/
 bool Nextion::process_nextion_commands_() {
   if (this->is_test_debug()) {
-    ESP_LOGW(TAG, "LOOP sleep : %s", this->is_sleeping() ? "True" : "False");
+    ESP_LOGD(TAG, "LOOP Nextion is sleep : %s", this->is_sleeping() ? "True" : "False");
     ESP_LOGD("*** HEAP", " Free: %d", ESP.getFreeHeap());
 #ifdef ARDUINO_ARCH_ESP32
     ESP_LOGD("*** HEAP", "Total: %d", ESP.getHeapSize());
