@@ -40,7 +40,7 @@ void NextionBinarySensor::set_state(bool state, bool publish, bool send_to_nexti
   if (!this->nextion_->is_setup())
     return;
 
-  if (this->variable_name_.empty())  // This is a legacy touch component
+  if (this->component_id_ == 0)  // This is a legacy touch component
     return;
 
   if (send_to_nextion) {

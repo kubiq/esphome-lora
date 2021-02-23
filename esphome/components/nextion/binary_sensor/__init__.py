@@ -48,12 +48,6 @@ def to_code(config):
     yield cg.register_component(var, config)
 
     if config.keys() >= {CONF_PAGE_ID, CONF_COMPONENT_ID}:
-        if CONF_COMPONENT_NAME in config or CONF_VARIABLE_NAME in config:
-            raise cv.Invalid(
-                "For Nextion Touch Component only {CONF_PAGE_ID} "
-                + "and {CONF_COMPONENT_ID} should be set"
-            )
-
         cg.add(hub.register_touch_component(var))
         cg.add(var.set_component_id(config[CONF_COMPONENT_ID]))
         cg.add(var.set_page_id(config[CONF_PAGE_ID]))
