@@ -73,24 +73,6 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint3
   yield();
 #endif
 
-  if (this->transfer_buffer_ == nullptr) {
-    // Anything over 65K seems to cause uart issues
-    int mysize = chunk_size > 65536 ? 65536 : chunk_size;
-    ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", mysize);
-    this->transfer_buffer_ = new uint8_t[mysize];
-    if (!this->transfer_buffer_) {  // Try a smaller size
-      ESP_LOGD(TAG, "upload_send_stream_ could not allocate buffer size: %d trying 4096 instead", mysize);
-      mysize = 4096;
-
-      ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", mysize);
-      this->transfer_buffer_ = new uint8_t[mysize];
-
-      if (!this->transfer_buffer_)
-        return false;
-    }
-    this->transfer_buffer_size_ = mysize;
-  }
-
   ESP_LOGD(TAG, "upload_send_stream_ start");
   while (content_length > 0) {
     size_t size = my_file.available();
@@ -137,17 +119,6 @@ void Nextion::upload_tft() {
     return;
   }
 
-  // This controls the range got from the webserver and the transfer buffer
-  // The http client "can" use up to this if we arent fast enough so its best
-  // to leave room for both. We send 4096 bytes to the Nextion so get
-  // x 4096 chunks
-  int chunk = int(((ESP.getFreeHeap()) * .4) / 4096);  // 40% for the chunk and maybe the http buffer.
-  uint32_t chunk_size = chunk * 4096;
-
-  ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
-
-  ESP_LOGD(TAG, "Updating tft from : %s : using %d chunksize", this->tft_url_.c_str(), chunk_size);
-
   this->is_updating_ = true;
 
   HTTPClient http;
@@ -166,6 +137,7 @@ void Nextion::upload_tft() {
   if (!begin_status) {
     this->is_updating_ = false;
     ESP_LOGD(TAG, "connection failed");
+    delete this->transfer_buffer_;
     return;
   } else {
     ESP_LOGD(TAG, "Connected");
@@ -230,13 +202,37 @@ void Nextion::upload_tft() {
       this->is_updating_ = false;
       return;
     }
-    ESP_LOGD(TAG, "Start upload. File size is: %d bytes", content_length);
+    // We send 4096 bytes to the Nextion so get x 4096 chunkss
+    int chunk = int(((ESP.getFreeHeap()) * .25) / 4096);  // 25% for the chunks
+    uint32_t chunk_size = chunk * 4096;
+
+    chunk_size = chunk_size > 65536 ? 65536 : chunk_size;
+
+    if (this->transfer_buffer_ == nullptr) {
+      ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", chunk_size);
+      this->transfer_buffer_ = new uint8_t[chunk_size];
+      if (!this->transfer_buffer_) {  // Try a smaller size
+        ESP_LOGD(TAG, "upload_send_stream_ could not allocate buffer size: %d trying 4096 instead", chunk_size);
+        chunk_size = 4096;
+
+        ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", chunk_size);
+        this->transfer_buffer_ = new uint8_t[chunk_size];
+
+        if (!this->transfer_buffer_)
+          return;
+      }
+      this->transfer_buffer_size_ = chunk_size;
+    }
+
+    ESP_LOGD(TAG, "Updating tft from \"%s\" with a file size of %d using %d chunksize", this->tft_url_.c_str(),
+             content_length, this->transfer_buffer_size_);
+    ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
 
     int result = 0;
-    result = this->upload_by_chunks_(result, content_length, chunk_size);
+    result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
 
     while (result > 0) {
-      result = this->upload_by_chunks_(result, content_length, chunk_size);
+      result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
     }
 
     if (result == 0) {
