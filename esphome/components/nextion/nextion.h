@@ -630,16 +630,18 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    */
   void send_command_no_ack(const char *command);
 
+#ifdef USE_TFT_UPLOAD
   /**
    * Set the tft file URL. https seems problamtic with arduino..
    */
   void set_tft_url(const std::string &tft_url) { this->tft_url_ = tft_url; }
 
+#endif
+
   /**
    * Upload the tft file and softreset the Nextion
    */
   void upload_tft();
-
   void dump_config() override;
 
   /**
@@ -739,6 +741,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   WiFiClient *get_wifi_client_();
 #endif
 
+#ifdef USE_TFT_UPLOAD
   /**
    * will request chunk_size chunks from the web server
    * and send each to the nextion
@@ -771,6 +774,8 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   void upload_end_();
 #endif
 
+#endif
+
   std::vector<NextionComponentBase *> touch_;
   std::vector<NextionComponentBase *> switchtype_;
   std::vector<NextionComponentBase *> sensortype_;
@@ -781,22 +786,26 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 
   optional<nextion_writer_t> writer_;
   float brightness_{1.0};
-  std::string tft_url_;
-
-  int sent_packets_ = 0;
 
   char device_model_[64];
   char firmware_version_[64];
   char serial_number_[64];
   char flash_size_[64];
+
+  void remove_front_no_sensors_();
+
+#ifdef USE_TFT_UPLOAD
+  int sent_packets_ = 0;
+  std::string tft_url_;
   uint8_t *transfer_buffer_{nullptr};
   size_t transfer_buffer_size_;
-  void remove_front_no_sensors_();
+  bool upload_first_chunk_sent_ = false;
+#endif
+
 #ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
   void print_queue_members_();
 #endif
 
-  bool upload_first_chunk_sent_ = false;
   uint8_t command_data_[1024];
 
   uint16_t command_data_length_ = 0;  // total length of data (including end bytes)

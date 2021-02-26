@@ -70,6 +70,7 @@ def to_code(config):
         cg.add(var.set_writer(lambda_))
 
     if CONF_TFT_URL in config:
+        cg.add_define("USE_TFT_UPLOAD")
         cg.add(var.set_tft_url(config[CONF_TFT_URL]))
 
     if CONF_TOUCH_SLEEP_TIMEOUT in config:
