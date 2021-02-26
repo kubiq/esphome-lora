@@ -71,10 +71,10 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint3
 #if defined ESP8266
   yield();
 #endif
-  // Anything over 65K seems to cause uart issues
-  int mysize = chunk_size > 65536 ? 65536 : chunk_size;
-  uint8_t file_size = 0;
+
   if (this->transfer_buffer_ == nullptr) {
+    // Anything over 65K seems to cause uart issues
+    int mysize = chunk_size > 65536 ? 65536 : chunk_size;
     ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", mysize);
     this->transfer_buffer_ = new uint8_t[mysize];
     if (!this->transfer_buffer_) {  // Try a smaller size
@@ -87,6 +87,7 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint3
       if (!this->transfer_buffer_)
         return false;
     }
+    this->transfer_buffer_size_ = mysize;
   }
 
   ESP_LOGD(TAG, "upload_send_stream_ start");
@@ -94,7 +95,8 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint3
     size_t size = my_file.available();
     ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d", size, this->sent_packets_);
     if (size) {
-      int c = my_file.readBytes(transfer_buffer_, ((size > mysize) ? mysize : size));
+      int c = my_file.readBytes(transfer_buffer_,
+                                ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
 
       for (uint16_t i = 0; i < c; i++) {
         this->write_byte(transfer_buffer_[i]);
@@ -105,7 +107,6 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint3
         if (this->sent_packets_ % 4096 == 0) {
           if (!this->upload_first_chunk_sent_) {
             this->upload_first_chunk_sent_ = true;
-            // delay(1000);  // NOLINT
           }
 
           String string = String("");

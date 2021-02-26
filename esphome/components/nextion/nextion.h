@@ -790,6 +790,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   char serial_number_[64];
   char flash_size_[64];
   uint8_t *transfer_buffer_{nullptr};
+  size_t transfer_buffer_size_;
   void remove_front_no_sensors_();
 #ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
   void print_queue_members_();
