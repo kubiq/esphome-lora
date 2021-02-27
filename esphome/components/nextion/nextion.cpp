@@ -223,9 +223,8 @@ bool Nextion::process_nextion_commands_() {
         break;
       case 0x01:  // instruction sent by user was successful
 
-        ESP_LOGD(TAG, "instruction sent by user was successful");
-
 #ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
+        ESP_LOGVV(TAG, "instruction sent by user was successful");
         ESP_LOGVV(TAG, "this->nextion_queue_.empty() %s", this->nextion_queue_.empty() ? "True" : "False");
         ESP_LOGVV(TAG, "get_queue_type %s", this->nextion_queue_.front()->get_queue_type_string().c_str());
 #endif

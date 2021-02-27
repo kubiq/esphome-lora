@@ -12,10 +12,10 @@ static const char *TAG = "nextion_upload";
 // Followed guide
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
-int Nextion::upload_by_chunks_(int range_start, int content_length, uint32_t chunk_size) {
-  int range_end = range_start + chunk_size - 1;
-  if (range_end > content_length)
-    range_end = content_length;
+int Nextion::upload_by_chunks_(int range_start) {
+  int range_end = range_start + this->transfer_buffer_size_ - 1;
+  if (range_end > this->tft_size_)
+    range_end = this->tft_size_;
 
   HTTPClient http;
 
@@ -44,7 +44,7 @@ int Nextion::upload_by_chunks_(int range_start, int content_length, uint32_t chu
 
   int tries = 1;
   int code = http.GET();
-  delay(100);  // NOLINT
+  delay(200);  // NOLINT
   while (code != 200 && code != 206 && tries <= 5) {
     ESP_LOGD(TAG, "upload_by_chunks_ retrying (%d/5)", tries);
     delay(500);  // NOLINT Needs a decent delay and since we will be rebooting this shouldnt be an issue.
@@ -52,57 +52,65 @@ int Nextion::upload_by_chunks_(int range_start, int content_length, uint32_t chu
     ++tries;
   }
 
-  if (code == 200 || code == 206) {
-    // Upload the received byte Stream to the nextion
-    uint32_t result = this->upload_send_stream_(*http.getStreamPtr(), range_end - range_start, chunk_size);
-    http.end();
-
-    return result > 0 ? result : range_start + chunk_size;
-  } else {
+  if (tries > 5) {
     http.end();
     return -1;
   }
-  // }
-  return -1;
+
+  // Upload the received byte Stream to the nextion
+  uint32_t result = this->upload_send_stream_(*http.getStreamPtr(), range_end - range_start);
+  http.end();
+
+  return result > 0 ? result : range_end + 1;
 }
 
-uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint32_t chunk_size) {
+uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
 #if defined ESP8266
   yield();
 #endif
 
-  ESP_LOGD(TAG, "upload_send_stream_ start");
+  ESP_LOGD(TAG, "upload_send_stream_ start range %d", range);
 
-  size_t size = my_file.available();
-  ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d", size, this->sent_packets_);
-  if (size) {
-    int c = my_file.readBytes(transfer_buffer_,
-                              ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
+  size_t size;
+  int sent = 0;
+  while (sent < range) {
+    size = my_file.available();
 
-    for (uint16_t i = 0; i < c; i++) {
-      this->write_byte(transfer_buffer_[i]);
+    if (size) {
+      int c = my_file.readBytes(transfer_buffer_,
+                                ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
+      // ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d c %d", size, this->sent_packets_,c);
+      for (uint16_t i = 0; i < c; i++) {
+        this->write_byte(transfer_buffer_[i]);
+        ++sent;
 
-      --content_length;
-      ++this->sent_packets_;
+        --this->content_length_;
+        ++this->sent_packets_;
 
-      if (this->sent_packets_ % 4096 == 0) {
-        if (!this->upload_first_chunk_sent_) {
-          this->upload_first_chunk_sent_ = true;
-        }
-
-        String string = String("");
-        this->recv_ret_string_(string, 2048, true);
-        if (string[0] == 0x08) {
-          uint32_t next_location = 0;
-          for (int i = 0; i < 4; ++i) {
-            next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
+        if (this->sent_packets_ % 4096 == 0) {
+          if (!this->upload_first_chunk_sent_) {
+            this->upload_first_chunk_sent_ = true;
+            delay(1000);  // NOLINT
           }
-          return next_location;
+
+          String string = String("");
+          this->recv_ret_string_(string, 2048, true);
+          if (string[0] == 0x08) {
+            uint32_t next_location = 0;
+            for (int i = 0; i < 4; ++i) {
+              next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
+            }
+            if (next_location != 0) {
+              ESP_LOGD(TAG, "upload_send_stream_ jumped to %d", next_location);
+              this->content_length_ = this->tft_size_ - next_location;
+              return next_location;
+            }
+          }
         }
       }
     }
   }
-
+  ESP_LOGD(TAG, "upload_send_stream_ jumped to 0");
   return 0;
 }
 void Nextion::upload_tft() {
@@ -160,12 +168,14 @@ void Nextion::upload_tft() {
   if (code == 200 || code == 206) {
     String content_range_string = http.header("Content-Range");
     content_range_string.remove(0, 12);
-    int content_length = content_range_string.toInt();
+    this->content_length_ = content_range_string.toInt();
+    this->tft_size_ = content_length_;
+
     http.end();  // End this HTTP call because we read all the data
     delay(2);
     ESP_LOGD(TAG, "%s", content_range_string.c_str());
 
-    if (content_length < 4096) {
+    if (this->content_length_ < 4096) {
       ESP_LOGE(TAG, "Failed to get file size");
       this->upload_end_();
     }
@@ -184,7 +194,7 @@ void Nextion::upload_tft() {
     // Tells the Nextion the content length of the tft file and baud rate it will be sent at
     // Once the Nextion accepts the command it will wait until the file is successfully uploaded
     // If it fails for any reason a power cycle of the display will be needed
-    sprintf(command, "whmi-wris %d,%d,1", content_length, this->parent_->get_baud_rate());
+    sprintf(command, "whmi-wris %d,%d,1", this->content_length_, this->parent_->get_baud_rate());
     this->send_command_(command);
 
     String response = String("");
@@ -222,12 +232,13 @@ void Nextion::upload_tft() {
     }
 
     ESP_LOGD(TAG, "Updating tft from \"%s\" with a file size of %d using %d chunksize", this->tft_url_.c_str(),
-             content_length, this->transfer_buffer_size_);
+             this->content_length_, this->transfer_buffer_size_);
     ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
 
     int result = 0;
-    while (content_length > 0) {
-      result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
+    while (this->content_length_ > 0) {
+      result = this->upload_by_chunks_(result);
+      ESP_LOGD(TAG, "content_length %d this->sent_packets_ %d", this->content_length_, this->sent_packets_);
     }
     // while (result > 0) {
     //   result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);

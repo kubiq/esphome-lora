@@ -750,7 +750,9 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @param uint32_t chunk_size
    * @return true if success, false for failure.
    */
-  int upload_by_chunks_(int range_start, int content_length, uint32_t chunk_size);
+  int content_length_ = 0;
+  int tft_size_ = 0;
+  int upload_by_chunks_(int range_start);
 
   bool upload_with_range_(uint32_t range_start, uint32_t range_end);
 
@@ -762,7 +764,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @param uint32_t chunk_size
    * @return next chunk location or 0 for success
    */
-  uint32_t upload_send_stream_(Stream &my_file, int content_length, uint32_t chunk_size);
+  uint32_t upload_send_stream_(Stream &my_file, int range);
 
   /**
    * start update tft file to nextion.
