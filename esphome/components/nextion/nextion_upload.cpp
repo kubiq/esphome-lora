@@ -40,7 +40,7 @@ int Nextion::upload_by_chunks_(int range_start) {
   sprintf(range_header, "bytes=%d-%d", range_start, range_end);
   http.addHeader("Range", range_header);
 
-  ESP_LOGD(TAG, "upload_by_chunks_ Requesting range: %s", range_header);
+  ESP_LOGD(TAG, "Requesting range: %s", range_header);
 
   int tries = 1;
   int code = http.GET();
@@ -69,7 +69,7 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
   yield();
 #endif
 
-  ESP_LOGD(TAG, "upload_send_stream_ start range %d", range);
+  // ESP_LOGD(TAG, "upload_send_stream_ start range %d", range);
 
   size_t size;
   int sent = 0;
@@ -101,7 +101,7 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
               next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
             }
             if (next_location != 0) {
-              ESP_LOGD(TAG, "upload_send_stream_ jumped to %d", next_location);
+              ESP_LOGD(TAG, "Nextion reported new range %d", next_location);
               this->content_length_ = this->tft_size_ - next_location;
               return next_location;
             }
@@ -110,7 +110,7 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
       }
     }
   }
-  ESP_LOGD(TAG, "upload_send_stream_ jumped to 0");
+  // ESP_LOGD(TAG, "upload_send_stream_ jumped to 0");
   return 0;
 }
 void Nextion::upload_tft() {
@@ -210,7 +210,7 @@ void Nextion::upload_tft() {
       return;
     }
     // We send 4096 bytes to the Nextion so get x 4096 chunkss
-    int chunk = int(((ESP.getFreeHeap()) * .25) / 4096);  // 25% for the chunks
+    int chunk = int(((ESP.getFreeHeap()) * .40) / 4096);  // 40% for the transfer buffer
     uint32_t chunk_size = chunk * 4096;
 
     chunk_size = chunk_size > 65536 ? 65536 : chunk_size;
@@ -238,17 +238,10 @@ void Nextion::upload_tft() {
     int result = 0;
     while (this->content_length_ > 0) {
       result = this->upload_by_chunks_(result);
-      ESP_LOGD(TAG, "content_length %d this->sent_packets_ %d", this->content_length_, this->sent_packets_);
+      ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
+      // ESP_LOGD(TAG, "content_length %d this->sent_packets_ %d", this->content_length_, this->sent_packets_);
     }
-    // while (result > 0) {
-    //   result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
-    // }
-
-    if (result == 0) {
-      ESP_LOGD(TAG, "Succesfully updated Nextion!");
-    } else {
-      ESP_LOGD(TAG, "Error updating Nextion:");
-    }
+    ESP_LOGD(TAG, "Succesfully updated Nextion!");
 
     this->upload_end_();
   }
