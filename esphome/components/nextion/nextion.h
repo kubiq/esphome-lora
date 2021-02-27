@@ -798,7 +798,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   void remove_front_no_sensors_();
 
 #ifdef USE_TFT_UPLOAD
-  int sent_packets_ = 0;
   std::string tft_url_;
   uint8_t *transfer_buffer_{nullptr};
   size_t transfer_buffer_size_;

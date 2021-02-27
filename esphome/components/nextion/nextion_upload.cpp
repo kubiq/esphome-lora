@@ -73,38 +73,43 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
 
   size_t size;
   int sent = 0;
+  int sent_tmp = 0;
   while (sent < range) {
     size = my_file.available();
+    if (!size)
+      continue;
 
-    if (size) {
-      int c = my_file.readBytes(transfer_buffer_,
-                                ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
-      // ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d c %d", size, this->sent_packets_,c);
-      for (uint16_t i = 0; i < c; i++) {
-        this->write_byte(transfer_buffer_[i]);
-        ++sent;
+    int c = my_file.readBytes(transfer_buffer_,
+                              ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
+    // ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d c %d", size, this->sent_packets_,c);
 
-        --this->content_length_;
-        ++this->sent_packets_;
+    for (uint16_t i = 0; i < c; i++) {
+      this->write_byte(transfer_buffer_[i]);
+      ++sent;
+      ++sent_tmp;
 
-        if (this->sent_packets_ % 4096 == 0) {
-          if (!this->upload_first_chunk_sent_) {
-            this->upload_first_chunk_sent_ = true;
-            delay(1000);  // NOLINT
+      --this->content_length_;
+      //++this->sent_packets_;
+
+      if (sent_tmp == 4096) {
+        sent_tmp = 0;
+
+        if (!this->upload_first_chunk_sent_) {
+          this->upload_first_chunk_sent_ = true;
+          delay(1000);  // NOLINT
+        }
+
+        String string = String("");
+        this->recv_ret_string_(string, 2048, true);
+        if (string[0] == 0x08) {
+          uint32_t next_location = 0;
+          for (int i = 0; i < 4; ++i) {
+            next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
           }
-
-          String string = String("");
-          this->recv_ret_string_(string, 2048, true);
-          if (string[0] == 0x08) {
-            uint32_t next_location = 0;
-            for (int i = 0; i < 4; ++i) {
-              next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
-            }
-            if (next_location != 0) {
-              ESP_LOGD(TAG, "Nextion reported new range %d", next_location);
-              this->content_length_ = this->tft_size_ - next_location;
-              return next_location;
-            }
+          if (next_location != 0) {
+            ESP_LOGD(TAG, "Nextion reported new range %d", next_location);
+            this->content_length_ = this->tft_size_ - next_location;
+            return next_location;
           }
         }
       }
@@ -205,7 +210,7 @@ void Nextion::upload_tft() {
       ESP_LOGD(TAG, "preparation for tft update done");
     } else {
       ESP_LOGD(TAG, "preparation for tft update failed %d \"%s\"", response[0], response.c_str());
-      this->sent_packets_ = 0;
+      // this->sent_packets_ = 0;
       this->is_updating_ = false;
       return;
     }
