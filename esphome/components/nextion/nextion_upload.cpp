@@ -57,7 +57,7 @@ int Nextion::upload_by_chunks_(int range_start, int content_length, uint32_t chu
     uint32_t result = this->upload_send_stream_(*http.getStreamPtr(), range_end - range_start, chunk_size);
     http.end();
 
-    return result > 0 ? result : range_end;
+    return result > 0 ? result : range_start + chunk_size;
   } else {
     http.end();
     return -1;
