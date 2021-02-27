@@ -210,7 +210,11 @@ void Nextion::upload_tft() {
       return;
     }
     // We send 4096 bytes to the Nextion so get x 4096 chunkss
-    int chunk = int(((ESP.getFreeHeap()) * .40) / 4096);  // 40% for the transfer buffer
+
+    // int chunk = int(((ESP.getFreeHeap()) * .40) / 4096);  // 40% for the transfer buffer
+    int chunk = 1;
+    if (ESP.getFreeHeap() > 90112)
+      chunk = int((ESP.getFreeHeap() - 65536) / 8192);
     uint32_t chunk_size = chunk * 4096;
 
     chunk_size = chunk_size > 65536 ? 65536 : chunk_size;
