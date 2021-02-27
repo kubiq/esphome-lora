@@ -13,9 +13,6 @@ static const char *TAG = "nextion_upload";
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
 int Nextion::upload_by_chunks_(int range_start, int content_length, uint32_t chunk_size) {
-  // bool completed = false;
-
-  // while (!completed) {
   int range_end = range_start + chunk_size - 1;
   if (range_end > content_length)
     range_end = content_length;
@@ -59,7 +56,8 @@ int Nextion::upload_by_chunks_(int range_start, int content_length, uint32_t chu
     // Upload the received byte Stream to the nextion
     uint32_t result = this->upload_send_stream_(*http.getStreamPtr(), range_end - range_start, chunk_size);
     http.end();
-    return result;
+
+    return result > 0 ? result : range_end;
   } else {
     http.end();
     return -1;
@@ -74,33 +72,32 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int content_length, uint3
 #endif
 
   ESP_LOGD(TAG, "upload_send_stream_ start");
-  while (content_length > 0) {
-    size_t size = my_file.available();
-    ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d", size, this->sent_packets_);
-    if (size) {
-      int c = my_file.readBytes(transfer_buffer_,
-                                ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
 
-      for (uint16_t i = 0; i < c; i++) {
-        this->write_byte(transfer_buffer_[i]);
+  size_t size = my_file.available();
+  ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d", size, this->sent_packets_);
+  if (size) {
+    int c = my_file.readBytes(transfer_buffer_,
+                              ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
 
-        --content_length;
-        ++this->sent_packets_;
+    for (uint16_t i = 0; i < c; i++) {
+      this->write_byte(transfer_buffer_[i]);
 
-        if (this->sent_packets_ % 4096 == 0) {
-          if (!this->upload_first_chunk_sent_) {
-            this->upload_first_chunk_sent_ = true;
+      --content_length;
+      ++this->sent_packets_;
+
+      if (this->sent_packets_ % 4096 == 0) {
+        if (!this->upload_first_chunk_sent_) {
+          this->upload_first_chunk_sent_ = true;
+        }
+
+        String string = String("");
+        this->recv_ret_string_(string, 2048, true);
+        if (string[0] == 0x08) {
+          uint32_t next_location = 0;
+          for (int i = 0; i < 4; ++i) {
+            next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
           }
-
-          String string = String("");
-          this->recv_ret_string_(string, 2048, true);
-          if (string[0] == 0x08) {
-            uint32_t next_location = 0;
-            for (int i = 0; i < 4; ++i) {
-              next_location += static_cast<uint8_t>(string[i + 1]) << (8 * i);
-            }
-            return next_location;
-          }
+          return next_location;
         }
       }
     }
@@ -229,11 +226,12 @@ void Nextion::upload_tft() {
     ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
 
     int result = 0;
-    result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
-
-    while (result > 0) {
+    while (content_length > 0) {
       result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
     }
+    // while (result > 0) {
+    //   result = this->upload_by_chunks_(result, content_length, this->transfer_buffer_size_);
+    // }
 
     if (result == 0) {
       ESP_LOGD(TAG, "Succesfully updated Nextion!");

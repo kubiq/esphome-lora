@@ -9,6 +9,7 @@
 // #include "nextion_sensor.h"
 // #include "nextion_binarysensor.h"
 #include "esphome/core/color.h"
+//#define USE_TFT_UPLOAD
 
 #if defined(USE_ETHERNET) || defined(USE_WIFI)
 #ifdef ARDUINO_ARCH_ESP32
