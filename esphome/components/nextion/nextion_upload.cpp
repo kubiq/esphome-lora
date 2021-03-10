@@ -206,6 +206,7 @@ void Nextion::upload_tft() {
     this->recv_ret_string_(response, 2000, true);  // This can take some time to return
 
     // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
+    ESP_LOGD(TAG, "Received %s %d", response.c_str(), response.length());
     if (response.indexOf(0x05) != -1) {
       ESP_LOGD(TAG, "preparation for tft update done");
     } else {

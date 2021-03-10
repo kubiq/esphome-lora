@@ -6,7 +6,7 @@ namespace nextion {
 
 class NextionBase;
 
-static const uint8_t LOOP_TIMEOUT_MS = 5;
+static const uint8_t LOOP_TIMEOUT_MS = 200;
 
 class NextionBase {
  public:

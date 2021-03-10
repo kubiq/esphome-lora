@@ -13,6 +13,7 @@ from ..base_component import (
 )
 
 CODEOWNERS = ["@senexcrenshaw"]
+DEPENDENCIES = ["display"]
 
 NextionSwitch = nextion_ns.class_("NextionSwitch", switch.Switch, cg.PollingComponent)
 

@@ -9,7 +9,9 @@
 // #include "nextion_sensor.h"
 // #include "nextion_binarysensor.h"
 #include "esphome/core/color.h"
+
 //#define USE_TFT_UPLOAD
+#define PROTOCOL_LOG
 
 #if defined(USE_ETHERNET) || defined(USE_WIFI)
 #ifdef ARDUINO_ARCH_ESP32
@@ -27,6 +29,8 @@
 
 namespace esphome {
 namespace nextion {
+
+#define PROTOCOL_LOG
 
 class Nextion;
 class NextionComponentBase;
@@ -711,7 +715,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    */
   bool ignore_is_setup_ = false;
   uint8_t nextion_event_;
-  bool nextion_has_event_ = false;
+  // bool nextion_has_event_ = false;
 
   bool process_nextion_commands_();
   bool is_updating_ = false;
@@ -726,6 +730,9 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   void send_command_(const char *command);
   void add_no_result_to_queue_(std::string variable_name);
   void add_no_result_to_queue_with_command_(std::string variable_name, std::string command);
+
+  void add_no_result_to_queue_with_printf_internal_(std::string variable_name, const char *format, ...)
+      __attribute__((format(printf, 3, 4)));
   void add_no_result_to_queue_with_printf_(std::string variable_name, const char *format, ...)
       __attribute__((format(printf, 3, 4)));
 
@@ -804,13 +811,13 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   bool upload_first_chunk_sent_ = false;
 #endif
 
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
+#ifdef PROTOCOL_LOG
   void print_queue_members_();
 #endif
 
-  uint8_t command_data_[1024];
+  std::string command_data_;
 
-  uint16_t command_data_length_ = 0;  // total length of data (including end bytes)
+  uint16_t command_data_length2_ = 0;  // total length of data (including end bytes)
 };
 }  // namespace nextion
 }  // namespace esphome
