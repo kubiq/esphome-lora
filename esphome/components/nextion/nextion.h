@@ -731,8 +731,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   void add_no_result_to_queue_(std::string variable_name);
   void add_no_result_to_queue_with_command_(std::string variable_name, std::string command);
 
-  void add_no_result_to_queue_with_printf_internal_(std::string variable_name, const char *format, ...)
-      __attribute__((format(printf, 3, 4)));
   void add_no_result_to_queue_with_printf_(std::string variable_name, const char *format, ...)
       __attribute__((format(printf, 3, 4)));
 

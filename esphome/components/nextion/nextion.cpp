@@ -37,7 +37,6 @@ void Nextion::setup() {
   this->send_command_("bkcmd=3");  // Always, returns 0x00 to 0x23 result of serial command.
 
   this->set_backlight_brightness(this->brightness_);
-
   this->goto_page("0");
 
   if (this->touch_sleep_timeout_ != 0) {
@@ -162,17 +161,20 @@ void Nextion::print_queue_members_() {
 #endif
 
 void Nextion::loop() {
-  if (!this->is_updating_)
-    this->process_nextion_commands_();
+  if (this->is_updating_)
+    return;
+
+  this->process_nextion_commands_();
 }
 
 // nextion.tech/instruction-set/
 bool Nextion::process_nextion_commands_() {
   uint8_t d;
+
   while (this->available()) {
     read_byte(&d);
     this->command_data_ += d;
-    ESP_LOGD(TAG, "Available %s 0x%02X %c", this->command_data_.c_str(), d, d);
+    ESP_LOGD(TAG, "Available 0x%02X", d);
   }
 
 #if defined ESP8266
@@ -181,12 +183,11 @@ bool Nextion::process_nextion_commands_() {
 
   std::string delimiter;
   delimiter.append(3, 255);
-  // delimiter += 255;
-  // delimiter += 255;
-  // delimiter += 255;
 
   size_t to_process_length = 0;
   std::string to_process;
+
+ ESP_LOGD(TAG, "Loop Start print_queue_members_ size %zu", this->nextion_queue_.size());
 
   while ((to_process_length = this->command_data_.find(delimiter)) != std::string::npos) {
 #ifdef PROTOCOL_LOG
@@ -707,6 +708,8 @@ bool Nextion::process_nextion_commands_() {
     this->command_data_.erase(0, to_process_length + delimiter.length() + 1);
   }
 
+
+   ESP_LOGD(TAG, "Loop End print_queue_members_ size %zu", this->nextion_queue_.size());
   return false;
 }
 
@@ -904,13 +907,6 @@ void Nextion::add_no_result_to_queue_with_command_(std::string variable_name, st
  */
 void Nextion::add_no_result_to_queue_with_printf_(std::string variable_name, const char *format, ...) {
   if ((!this->is_setup() && !this->ignore_is_setup_) || this->is_sleeping())
-    return;
-
-  this->add_no_result_to_queue_with_printf_internal_(variable_name, format);
-}
-
-void Nextion::add_no_result_to_queue_with_printf_internal_(std::string variable_name, const char *format, ...) {
-  if (!this->is_setup() && !this->ignore_is_setup_)
     return;
 
   char buffer[256];
