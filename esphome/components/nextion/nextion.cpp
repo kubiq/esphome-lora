@@ -25,9 +25,9 @@ void Nextion::setup() {
   this->send_command_("connect");
   delay(250);  // NOLINT
 
-  String response = String("");
+  std::string response;
   this->recv_ret_string_(response, 500, false);
-  if (response.indexOf(F("comok")) == -1) {
+  if (response.find("comok") == std::string::npos) {
     ESP_LOGD(TAG, "display doesn't accept the first connect request %s", response.c_str());
     for (int i = 0; i < response.length(); i++) {
       ESP_LOGD(TAG, "response %d 0x%02X %c", i, response[i], response[i]);
@@ -808,11 +808,7 @@ void Nextion::update_components_by_prefix(std::string page) {
   }
 }
 
-uint16_t Nextion::recv_ret_string_(String &response, uint32_t timeout, bool recv_flag) {
-#if defined ESP8266
-  delay(1);
-#endif
-
+uint16_t Nextion::recv_ret_string_(std::string &response, uint32_t timeout, bool recv_flag) {
   uint16_t ret = 0;
   uint8_t c = 0;
   uint8_t nr_of_ff_bytes = 0;
@@ -836,12 +832,12 @@ uint16_t Nextion::recv_ret_string_(String &response, uint32_t timeout, bool recv
         ff_flag = true;
 
       response += (char) c;
-
       if (recv_flag) {
-        if (response.indexOf(0x05) != -1) {
+        if (response.find(0x05) != std::string::npos) {
           exit_flag = true;
         }
       }
+      yield();
     }
     if (exit_flag || ff_flag) {
       break;
@@ -849,7 +845,7 @@ uint16_t Nextion::recv_ret_string_(String &response, uint32_t timeout, bool recv
   }
 
   if (ff_flag)
-    response = response.substring(0, response.length() - 3);  // Remove last 3 0xFF
+    response = response.substr(0, response.length() - 3);  // Remove last 3 0xFF
 
   ret = response.length();
   return ret;
