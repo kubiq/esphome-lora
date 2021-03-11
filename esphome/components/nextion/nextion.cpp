@@ -16,31 +16,29 @@ void Nextion::setup() {
 
   this->send_command_("bkcmd=0");
   this->send_command_("sleep=0");
+
+  this->send_command_("bkcmd=0");
   this->send_command_("sleep=0");
 
-  delay(150);  // NOLINT
+  delay(1500);  // NOLINT
 
   std::string response;
 
-  bool is_ready = false;
   int tries = 1;
-
-  uint8_t d;
-
-  while (!is_ready && tries <= 5) {
+  while (tries <= 5) {
     response.clear();
     ++tries;
-    while (this->available()) {  // Clear receive buffer
-      this->read_byte(&d);
-    };
+    this->send_command_("boguscommand=0");  // bogus command. needed sometimes after updating
+    delay(100);                             // NOLINT
 
     this->send_command_("connect");
     delay(250);  // NOLINT
-    this->recv_ret_string_(response, 500, false);
 
-    is_ready = response.find("comok") != std::string::npos;
-    delay(50);  // NOLINT
-    App.feed_wdt();
+    this->recv_ret_string_(response, 500, false);
+    if (response.find("comok") != std::string::npos)
+      break;
+
+    this->reset_(false);
   }
 
   if (tries > 5) {
@@ -64,6 +62,25 @@ void Nextion::setup() {
     this->set_wake_up_page(this->wake_up_page_);
   }
   this->ignore_is_setup_ = false;
+}
+
+void Nextion::reset_(bool reset_nextion) {
+  this->ignore_is_setup_ = true;
+
+  if (reset_nextion) {
+    this->soft_reset();
+    delay(250);  // NOLINT
+  }
+
+  uint8_t d;
+
+  while (this->available()) {  // Clear receive buffer
+    this->read_byte(&d);
+  };
+  this->nextion_queue_.empty();
+
+  this->ignore_is_setup_ = false;
+  App.feed_wdt();
 }
 
 void Nextion::dump_config() {
@@ -418,6 +435,7 @@ bool Nextion::process_nextion_commands_() {
         if (nextion_queue->get_queue_type() != NextionQueueType::TEXT_SENSOR) {
           ESP_LOGE(TAG, "ERROR: Received string return but next in queue \"%s\" is not a text sensor",
                    nextion_queue->get_variable_name().c_str());
+          this->reset_();
           break;
         }
 
@@ -474,6 +492,7 @@ bool Nextion::process_nextion_commands_() {
             nextion_queue->get_queue_type() != NextionQueueType::SWITCH) {
           ESP_LOGE(TAG, "ERROR: Received numeric return but next in queue \"%s\" is not a valid sensor",
                    nextion_queue->get_variable_name().c_str());
+          this->reset_();
           break;
         }
 

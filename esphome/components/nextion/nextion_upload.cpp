@@ -39,24 +39,20 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
   int code = 0;
   while (tries <= 5) {
     ++tries;
-
     if (!begin_status) {
       ESP_LOGD(TAG, "upload_by_chunks_: connection failed");
       continue;
     }
-
     http->addHeader("Range", range_header);
     code = http->GET();
     if (code == 200 || code == 206) {
       break;
     }
-
     ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retries(%d/5)", this->tft_url_.c_str(),
              HTTPClient::errorToString(code).c_str(), tries);
-
     http->end();
     App.feed_wdt();
-    delay(150);  // NOLINT
+    delay(500);  // NOLINT
   }
 
   if (tries > 5) {
@@ -122,7 +118,7 @@ void Nextion::upload_tft() {
   this->is_updating_ = true;
 
   HTTPClient http;
-  http.setTimeout(10000);
+  http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
   bool begin_status = false;
 #ifdef ARDUINO_ARCH_ESP32
   begin_status = http.begin(this->tft_url_.c_str());
@@ -264,7 +260,7 @@ void Nextion::upload_tft() {
       this->upload_end_();
     }
     App.feed_wdt();
-    ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
+    ESP_LOGD(TAG, "Heap Size %d, Bytes left %d", ESP.getFreeHeap(), this->content_length_);
   }
   ESP_LOGD(TAG, "Succesfully updated Nextion!");
 

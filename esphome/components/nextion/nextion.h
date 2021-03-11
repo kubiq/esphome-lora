@@ -803,6 +803,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 #ifdef NEXTION_PROTOCOL_LOG
   void print_queue_members_();
 #endif
+  void reset_(bool reset_nextion = true);
 
   std::string command_data_;
   std::string command_delimiter_;
