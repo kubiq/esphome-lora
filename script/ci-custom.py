@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from helpers import git_ls_files, filter_changed
 import codecs
 import collections
 import fnmatch
@@ -12,7 +13,7 @@ import functools
 import argparse
 
 sys.path.append(os.path.dirname(__file__))
-from helpers import git_ls_files, filter_changed
+
 
 def find_all(a_str, sub):
     if not a_str.find(sub):
@@ -434,7 +435,6 @@ def lint_inclusive_language(fname, match):
             "    'blocklist / passlist'")
 
 
-
 @lint_content_find_check('ESP_LOG', include=['*.h', '*.tcc'], exclude=[
     'esphome/components/binary_sensor/binary_sensor.h',
     'esphome/components/cover/cover.h',
@@ -448,6 +448,7 @@ def lint_inclusive_language(fname, match):
     'esphome/components/switch/switch.h',
     'esphome/components/text_sensor/text_sensor.h',
     'esphome/components/climate/climate.h',
+    'esphome/components/nextion/nextion_base.h',
     'esphome/core/component.h',
     'esphome/core/esphal.h',
     'esphome/core/log.h',

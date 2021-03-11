@@ -11,13 +11,16 @@ static const char *TAG = "nextion";
 void Nextion::setup() {
   this->is_setup_ = false;
   this->ignore_is_setup_ = true;
+
+  this->command_delimiter_.append(3, 255);
+
   this->send_command_("bkcmd=0");
 
   this->send_command_("sleep=0");  // bogus command. needed sometimes after updating
   delay(1500);                     // NOLINT
 
-  this->send_command_("bodkdkdkds=22");  // bogus command. needed sometimes after updating
-  delay(100);                            // NOLINT
+  this->send_command_("boguscommand=0");  // bogus command. needed sometimes after updating
+  delay(100);                             // NOLINT
   this->flush();
   this->send_command_("connect");
   delay(250);  // NOLINT
@@ -135,8 +138,8 @@ void Nextion::send_command_(const char *command) {
     return;
   }
 
-#ifdef PROTOCOL_LOG
-  ESP_LOGD(TAG, "send_command %s", command);
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "send_command %s", command);
 #endif
 
   this->write_str(command);
@@ -144,19 +147,19 @@ void Nextion::send_command_(const char *command) {
   this->write_array(to_send, sizeof(to_send));
 }
 
-#ifdef PROTOCOL_LOG
+#ifdef NEXTION_PROTOCOL_LOG
 void Nextion::print_queue_members_() {
-  ESP_LOGD(TAG, "print_queue_members_ size %zu", this->nextion_queue_.size());
-  ESP_LOGD(TAG, "*******************************************");
+  ESP_LOGN(TAG, "print_queue_members_ size %zu", this->nextion_queue_.size());
+  ESP_LOGN(TAG, "*******************************************");
   for (auto *i : this->nextion_queue_) {
     if (i == nullptr) {
-      ESP_LOGD(TAG, "Nextion queue is null");
+      ESP_LOGN(TAG, "Nextion queue is null");
     } else {
-      ESP_LOGD(TAG, "Nextion queue type: %d:%s , name: %s", i->get_queue_type(), i->get_queue_type_string().c_str(),
+      ESP_LOGN(TAG, "Nextion queue type: %d:%s , name: %s", i->get_queue_type(), i->get_queue_type_string().c_str(),
                i->get_variable_name().c_str());
     }
   }
-  ESP_LOGD(TAG, "*******************************************");
+  ESP_LOGN(TAG, "*******************************************");
 }
 #endif
 
@@ -174,23 +177,15 @@ bool Nextion::process_nextion_commands_() {
   while (this->available()) {
     read_byte(&d);
     this->command_data_ += d;
-    ESP_LOGD(TAG, "Available 0x%02X", d);
   }
 
-#if defined ESP8266
   yield();
-#endif
-
-  std::string delimiter;
-  delimiter.append(3, 255);
 
   size_t to_process_length = 0;
   std::string to_process;
 
- ESP_LOGD(TAG, "Loop Start print_queue_members_ size %zu", this->nextion_queue_.size());
-
-  while ((to_process_length = this->command_data_.find(delimiter)) != std::string::npos) {
-#ifdef PROTOCOL_LOG
+  while ((to_process_length = this->command_data_.find(this->command_delimiter_)) != std::string::npos) {
+#ifdef NEXTION_PROTOCOL_LOG
     this->print_queue_members_();
 #endif
 
@@ -205,17 +200,17 @@ bool Nextion::process_nextion_commands_() {
         break;
       case 0x01:  // instruction sent by user was successful
 
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "instruction sent by user was successful");
-        ESP_LOGD(TAG, "this->nextion_queue_.empty() %s", this->nextion_queue_.empty() ? "True" : "False");
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "instruction sent by user was successful");
+        ESP_LOGN(TAG, "this->nextion_queue_.empty() %s", this->nextion_queue_.empty() ? "True" : "False");
 #endif
 
         if (!this->nextion_queue_.empty() &&
             this->nextion_queue_.front()->get_queue_type() == NextionQueueType::NO_RESULT) {
           NextionComponentBase *nextion_queue = this->nextion_queue_.front();
 
-#ifdef PROTOCOL_LOG
-          ESP_LOGD(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+          ESP_LOGN(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
 #endif
           this->nextion_queue_.pop_front();
           delete nextion_queue;
@@ -236,8 +231,8 @@ bool Nextion::process_nextion_commands_() {
         if (!this->nextion_queue_.empty()) {
           NextionComponentBase *nextion_queue = this->nextion_queue_.front();
 
-#ifdef PROTOCOL_LOG
-          ESP_LOGD(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+          ESP_LOGN(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
 #endif
           ESP_LOGW(TAG, "Nextion reported component ID \"%s\" invalid!", nextion_queue->get_variable_name().c_str());
           this->nextion_queue_.pop_front();
@@ -275,8 +270,8 @@ bool Nextion::process_nextion_commands_() {
           int found = -1;
           for (auto &i : this->nextion_queue_) {
             if (i->get_queue_type() == NextionQueueType::WAVEFORM_SENSOR) {
-#ifdef PROTOCOL_LOG
-              ESP_LOGD(TAG, "Removing waveform from queue with component id %d and waveform id %d",
+#ifdef NEXTION_PROTOCOL_LOG
+              ESP_LOGN(TAG, "Removing waveform from queue with component id %d and waveform id %d",
                        i->get_component_id(), i->get_wave_channel_id());
 #endif
               ESP_LOGW(TAG, "Nextion reported invalid Waveform ID %d or Channel # %d was used!", i->get_component_id(),
@@ -301,8 +296,8 @@ bool Nextion::process_nextion_commands_() {
         if (!this->nextion_queue_.empty()) {
           NextionComponentBase *nextion_queue = this->nextion_queue_.front();
 
-#ifdef PROTOCOL_LOG
-          ESP_LOGD(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+          ESP_LOGN(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
 #endif
           ESP_LOGW(TAG, "Nextion reported variable name \"%s\" invalid!", nextion_queue->get_variable_name().c_str());
 
@@ -339,8 +334,8 @@ bool Nextion::process_nextion_commands_() {
 
         if (!this->nextion_queue_.empty()) {
           auto nextion_queue = this->nextion_queue_.front();
-#ifdef PROTOCOL_LOG
-          ESP_LOGD(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+          ESP_LOGN(TAG, "Removing %s from the queue", nextion_queue->get_variable_name().c_str());
 #endif
           this->nextion_queue_.pop_front();
           if (nextion_queue->get_queue_type() == NextionQueueType::NO_RESULT) {
@@ -354,7 +349,7 @@ bool Nextion::process_nextion_commands_() {
         break;
       case 0x65: {  // touch event return data
         if (to_process_length != 3) {
-          ESP_LOGW(TAG, "Touch event data is expecting 3, received %d", to_process_length);
+          ESP_LOGW(TAG, "Touch event data is expecting 3, received %zu", to_process_length);
 
           break;
         }
@@ -372,7 +367,7 @@ bool Nextion::process_nextion_commands_() {
       case 0x68: {  // touch coordinate data
 
         if (to_process_length != 5) {
-          ESP_LOGW(TAG, "Touch coordinate data is expecting 5, received %d", to_process_length);
+          ESP_LOGW(TAG, "Touch coordinate data is expecting 5, received %zu", to_process_length);
           ESP_LOGW(TAG, "%s", to_process.c_str());
           break;
         }
@@ -407,8 +402,8 @@ bool Nextion::process_nextion_commands_() {
 
         auto nextion_queue = this->nextion_queue_.front();
 
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "Received get_string response: \"%s\" for component id: %s, type: %s", to_process.c_str(),
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "Received get_string response: \"%s\" for component id: %s, type: %s", to_process.c_str(),
                  nextion_queue->get_variable_name().c_str(), nextion_queue->get_queue_type_string().c_str());
 #endif
         if (nextion_queue->get_queue_type() != NextionQueueType::TEXT_SENSOR) {
@@ -460,8 +455,8 @@ bool Nextion::process_nextion_commands_() {
 
         auto nextion_queue = this->nextion_queue_.front();
 
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "Received numeric return for variable %s, queue type %d:%s, value %d",
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "Received numeric return for variable %s, queue type %d:%s, value %d",
                  nextion_queue->get_variable_name().c_str(), nextion_queue->get_queue_type(),
                  nextion_queue->get_queue_type_string().c_str(), value);
 #endif
@@ -495,7 +490,7 @@ bool Nextion::process_nextion_commands_() {
       }
       case 0x88:  // system successful start up
       {
-        ESP_LOGD(TAG, "system successful start up %d", to_process_length);
+        ESP_LOGD(TAG, "system successful start up %zu", to_process_length);
         break;
       }
       case 0x89:  // start SD card upgrade
@@ -523,8 +518,8 @@ bool Nextion::process_nextion_commands_() {
         }
         ++index;
 
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "Got Switch variable_name=%s value=%d", variable_name.c_str(), to_process[0] != 0);
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "Got Switch variable_name=%s value=%d", variable_name.c_str(), to_process[0] != 0);
 #endif
 
         for (auto *switchtype : this->switchtype_) {
@@ -571,8 +566,8 @@ bool Nextion::process_nextion_commands_() {
           }
         }
 
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "Got sensor variable_name=%s value=%d", variable_name.c_str(), value);
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "Got sensor variable_name=%s value=%d", variable_name.c_str(), value);
 #endif
 
         for (auto *sensor : this->sensortype_) {
@@ -619,8 +614,8 @@ bool Nextion::process_nextion_commands_() {
           // invalid_command_data_length = true;
           break;
         }
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "Got Text Sensor variable_name=%s value=%s", variable_name.c_str(), text_value.c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "Got Text Sensor variable_name=%s value=%s", variable_name.c_str(), text_value.c_str());
 #endif
         for (auto *textsensortype : this->textsensortype_) {
           textsensortype->process_text(variable_name, text_value);
@@ -652,8 +647,8 @@ bool Nextion::process_nextion_commands_() {
         }
         ++index;
 
-#ifdef PROTOCOL_LOG
-        ESP_LOGD(TAG, "Got Binary Sensor variable_name=%s value=%d", variable_name, to_process[index] != 0);
+#ifdef NEXTION_PROTOCOL_LOG
+        ESP_LOGN(TAG, "Got Binary Sensor variable_name=%s value=%d", variable_name, to_process[index] != 0);
 #endif
         for (auto *binarysensortype : this->binarysensortype_) {
           binarysensortype->process_bool(&variable_name[0], to_process[index] != 0);
@@ -671,16 +666,18 @@ bool Nextion::process_nextion_commands_() {
         int found = -1;
         for (auto &i : this->nextion_queue_) {
           if (i->get_queue_type() == NextionQueueType::WAVEFORM_SENSOR) {
-            this->write_array(i->get_wave_buffer().data(), static_cast<int>(i->get_wave_buffer_size()));
-#ifdef PROTOCOL_LOG
-            ESP_LOGD(TAG, "Nextion sending waveform data for component id %d and waveform id %d", i->get_component_id(),
-                     i->get_wave_channel_id());
+            size_t buffer_to_send = i->get_wave_buffer().size() < 255 ? i->get_wave_buffer().size()
+                                                                      : 255;  // ADDT command can only send 255
+
+            this->write_array(i->get_wave_buffer().data(), static_cast<int>(buffer_to_send));
+#ifdef NEXTION_PROTOCOL_LOG
+            ESP_LOGN(TAG, "Nextion sending waveform data for component id %d and waveform id %d, size %zu",
+                     i->get_component_id(), i->get_wave_channel_id(), buffer_to_send);
 #endif
             if (i->get_wave_buffer().size() <= 255) {
               i->get_wave_buffer().clear();  // faster than the below
             } else {
-              i->get_wave_buffer().erase(i->get_wave_buffer().begin(),
-                                         i->get_wave_buffer().begin() + i->get_wave_buffer_size());
+              i->get_wave_buffer().erase(i->get_wave_buffer().begin(), i->get_wave_buffer().begin() + buffer_to_send);
             }
             found = index;
             break;
@@ -701,15 +698,13 @@ bool Nextion::process_nextion_commands_() {
         break;
     }
 
-#ifdef PROTOCOL_LOG
-    ESP_LOGD(TAG, "nextion loop end");
+#ifdef NEXTION_PROTOCOL_LOG
+    ESP_LOGN(TAG, "nextion loop end");
 #endif
 
-    this->command_data_.erase(0, to_process_length + delimiter.length() + 1);
+    this->command_data_.erase(0, to_process_length + this->command_delimiter_.length() + 1);
   }
 
-
-   ESP_LOGD(TAG, "Loop End print_queue_members_ size %zu", this->nextion_queue_.size());
   return false;
 }
 
@@ -721,8 +716,8 @@ void Nextion::set_nextion_sensor_state(NextionQueueType queue_type, std::string 
   if (queue_type < 0 || queue_type > 2)
     return;
 
-#ifdef PROTOCOL_LOG
-  ESP_LOGD(TAG, "Received state for variable %s, state %lf", name.c_str(), state);
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Received state for variable %s, state %lf", name.c_str(), state);
 #endif
   switch (queue_type) {
     case NextionQueueType::SENSOR: {
@@ -830,11 +825,6 @@ uint16_t Nextion::recv_ret_string_(String &response, uint32_t timeout, bool recv
   while (millis() - start <= timeout) {
     while (this->available()) {
       this->read_byte(&c);
-      //       App.feed_wdt();
-      // #if defined ESP8266
-      //       yield();
-      // #endif
-
       if (c == 0xFF)
         nr_of_ff_bytes++;
       else {
@@ -876,8 +866,8 @@ void Nextion::add_no_result_to_queue_(std::string name) {
 
   this->nextion_queue_.push_back(nextion_queue);
 
-#ifdef PROTOCOL_LOG
-  ESP_LOGD(TAG, "Add to queue type: NORESULT component %s", nextion_queue->get_variable_name().c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Add to queue type: NORESULT component %s", nextion_queue->get_variable_name().c_str());
 #endif
 }
 
@@ -981,8 +971,8 @@ void Nextion::add_to_get_queue(NextionComponentBase *component) {
 
   this->nextion_queue_.push_back(component);
 
-#ifdef PROTOCOL_LOG
-  ESP_LOGD(TAG, "Add to queue type: %s component %s", component->get_queue_type_string().c_str(),
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Add to queue type: %s component %s", component->get_queue_type_string().c_str(),
            component->get_variable_name().c_str());
 #endif
 
@@ -1005,9 +995,12 @@ void Nextion::add_addt_command_to_queue(NextionComponentBase *component) {
 
   this->nextion_queue_.push_back(component);
 
+  size_t buffer_to_send = component->get_wave_buffer_size() < 255 ? component->get_wave_buffer_size()
+                                                                  : 255;  // ADDT command can only send 255
+
   char command[64];
-  sprintf(command, "addt %d,%u,%zu", component->get_component_id(), component->get_wave_channel_id(),
-          component->get_wave_buffer_size());
+  sprintf(command, "addt %d,%u,%zu", component->get_component_id(), component->get_wave_channel_id(), buffer_to_send);
+
   this->send_command_(command);
 }
 

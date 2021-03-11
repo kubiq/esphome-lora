@@ -87,8 +87,8 @@ void NextionSensor::set_state(float state, bool publish, bool send_to_nextion) {
   }
   this->update_component_settings();
 
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-  ESP_LOGVV(TAG, "Wrote state for sensor \"%s\" state %lf", this->variable_name_.c_str(), state);
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Wrote state for sensor \"%s\" state %lf", this->variable_name_.c_str(), state);
 #endif
 }
 
@@ -97,12 +97,12 @@ void NextionSensor::wave_update_() {
     return;
   }
 
+#ifdef NEXTION_PROTOCOL_LOG
   size_t buffer_to_send =
-      this->wave_buffer_.size() <= 255 ? this->wave_buffer_.size() : 255;  // ADDT command can only send 255
+      this->wave_buffer_.size() < 255 ? this->wave_buffer_.size() : 255;  // ADDT command can only send 255
 
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-  ESP_LOGVV(TAG, "wave_update send %zu of %zu value(s) to wave nextion component id %d and wave channel id %d",
-            buffer_to_send, this->wave_buffer_.size(), this->component_id_, this->wave_chan_id_);
+  ESP_LOGN(TAG, "wave_update send %zu of %zu value(s) to wave nextion component id %d and wave channel id %d",
+           buffer_to_send, this->wave_buffer_.size(), this->component_id_, this->wave_chan_id_);
 #endif
 
   this->nextion_->add_addt_command_to_queue(this);

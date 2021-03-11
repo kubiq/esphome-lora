@@ -4,14 +4,7 @@
 #include "esphome/components/uart/uart.h"
 #include "nextion_base.h"
 #include "nextion_component.h"
-// #include "nextion_textsensor.h"
-// #include "nextion_switch.h"
-// #include "nextion_sensor.h"
-// #include "nextion_binarysensor.h"
 #include "esphome/core/color.h"
-
-//#define USE_TFT_UPLOAD
-#define PROTOCOL_LOG
 
 #if defined(USE_ETHERNET) || defined(USE_WIFI)
 #ifdef ARDUINO_ARCH_ESP32
@@ -29,8 +22,6 @@
 
 namespace esphome {
 namespace nextion {
-
-#define PROTOCOL_LOG
 
 class Nextion;
 class NextionComponentBase;
@@ -814,8 +805,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 #endif
 
   std::string command_data_;
-
-  uint16_t command_data_length2_ = 0;  // total length of data (including end bytes)
+  std::string command_delimiter_;
 };
 }  // namespace nextion
 }  // namespace esphome

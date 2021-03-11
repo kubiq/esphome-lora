@@ -43,8 +43,8 @@ void NextionSwitch::set_state(bool state, bool publish, bool send_to_nextion) {
 
   this->update_component_settings();
 
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-  ESP_LOGVV(TAG, "Updated switch \"%s\" state %s", this->variable_name_.c_str(), state ? "ON" : "OFF");
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Updated switch \"%s\" state %s", this->variable_name_.c_str(), state ? "ON" : "OFF");
 #endif
 }
 

@@ -61,8 +61,8 @@ void NextionBinarySensor::set_state(bool state, bool publish, bool send_to_nexti
 
   this->update_component_settings();
 
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-  ESP_LOGVV(TAG, "Wrote state for sensor \"%s\" state %s", this->variable_name_.c_str(), state ? "ON" : "OFF");
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Wrote state for sensor \"%s\" state %s", this->variable_name_.c_str(), state ? "ON" : "OFF");
 #endif
 }
 

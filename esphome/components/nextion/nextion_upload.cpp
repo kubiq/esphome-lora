@@ -179,7 +179,6 @@ void Nextion::upload_tft() {
 
     http.end();  // End this HTTP call because we read all the data
     delay(2);
-    ESP_LOGD(TAG, "%s", content_range_string.c_str());
 
     if (this->content_length_ < 4096) {
       ESP_LOGE(TAG, "Failed to get file size");
@@ -207,12 +206,12 @@ void Nextion::upload_tft() {
     this->recv_ret_string_(response, 2000, true);  // This can take some time to return
 
     // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
-    ESP_LOGD(TAG, "Received %s %d", response.c_str(), response.length());
-    if (response.indexOf(0x05) != -1 || response.length() == 0) {
+    ESP_LOGD(TAG, "Upgrade response is %s %d", response.c_str(), response.length());
+    if (response.indexOf(0x05) != -1) {
       ESP_LOGD(TAG, "preparation for tft update done");
     } else {
       ESP_LOGD(TAG, "preparation for tft update failed %d \"%s\"", response[0], response.c_str());
-      // this->sent_packets_ = 0;
+      this->upload_end_();
       this->is_updating_ = false;
       return;
     }
@@ -260,6 +259,7 @@ void Nextion::upload_tft() {
 void Nextion::upload_end_() {
   ESP_LOGD(TAG, "Restarting Nextion");
   this->soft_reset();
+  delay(1500);  // NOLINT
   ESP_LOGD(TAG, "Restarting esphome");
   ESP.restart();
 }

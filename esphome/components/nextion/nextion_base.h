@@ -1,8 +1,21 @@
 #pragma once
+#include "esphome/core/defines.h"
 #include "esphome/core/color.h"
 #include "nextion_component_base.h"
 namespace esphome {
 namespace nextion {
+
+#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
+#define NEXTION_PROTOCOL_LOG
+#endif
+
+#ifdef NEXTION_PROTOCOL_LOG
+#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
+#define ESP_LOGN(tag, ...) esph_log_vv(tag, __VA_ARGS__)
+#else
+#define ESP_LOGN(tag, ...) esph_log_d(tag, __VA_ARGS__)
+#endif
+#endif
 
 class NextionBase;
 

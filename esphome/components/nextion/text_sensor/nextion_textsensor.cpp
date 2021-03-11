@@ -11,7 +11,6 @@ void NextionTextSensor::process_text(std::string variable_name, std::string text
     return;
   if (this->variable_name_ == variable_name) {
     this->publish_state(text_value);
-
     ESP_LOGD(TAG, "Processed text_sensor \"%s\" state \"%s\"", variable_name.c_str(), text_value.c_str());
   }
 }
@@ -43,8 +42,8 @@ void NextionTextSensor::set_state(std::string state, bool publish, bool send_to_
 
   this->update_component_settings();
 
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-  ESP_LOGVV(TAG, "Wrote state for text_sensor \"%s\" state \"%s\"", this->variable_name_.c_str(), state.c_str());
+#ifdef NEXTION_PROTOCOL_LOG
+  ESP_LOGN(TAG, "Wrote state for text_sensor \"%s\" state \"%s\"", this->variable_name_.c_str(), state.c_str());
 #endif
 }
 
