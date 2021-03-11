@@ -46,7 +46,9 @@ int Nextion::upload_by_chunks_(int range_start) {
   int code = http.GET();
   delay(200);  // NOLINT
   while (code != 200 && code != 206 && tries <= 5) {
-    ESP_LOGD(TAG, "upload_by_chunks_ retrying (%d/5)", tries);
+    ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retrying (%d/5)", this->tft_url_.c_str(),
+             HTTPClient::errorToString(code).c_str(), tries);
+
     delay(500);  // NOLINT Needs a decent delay and since we will be rebooting this shouldnt be an issue.
     code = http.GET();
     ++tries;
@@ -60,17 +62,10 @@ int Nextion::upload_by_chunks_(int range_start) {
   // Upload the received byte Stream to the nextion
   uint32_t result = this->upload_send_stream_(*http.getStreamPtr(), range_end - range_start);
   http.end();
-
   return result > 0 ? result : range_end + 1;
 }
 
 uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
-#if defined ESP8266
-  yield();
-#endif
-
-  // ESP_LOGD(TAG, "upload_send_stream_ start range %d", range);
-
   size_t size;
   int sent = 0;
   int sent_tmp = 0;
@@ -81,7 +76,6 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
 
     int c = my_file.readBytes(transfer_buffer_,
                               ((size > this->transfer_buffer_size_) ? this->transfer_buffer_size_ : size));
-    // ESP_LOGD(TAG, "upload_send_stream_ size %zu sent_packets_ %d c %d", size, this->sent_packets_,c);
 
     for (uint16_t i = 0; i < c; i++) {
       this->write_byte(transfer_buffer_[i]);
@@ -89,14 +83,14 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
       ++sent_tmp;
 
       --this->content_length_;
-      //++this->sent_packets_;
 
       if (sent_tmp == 4096) {
+        yield();
         sent_tmp = 0;
 
         if (!this->upload_first_chunk_sent_) {
           this->upload_first_chunk_sent_ = true;
-          delay(1000);  // NOLINT
+          delay(500);  // NOLINT
         }
 
         String string = String("");
@@ -115,7 +109,7 @@ uint32_t Nextion::upload_send_stream_(Stream &my_file, int range) {
       }
     }
   }
-  // ESP_LOGD(TAG, "upload_send_stream_ jumped to 0");
+
   return 0;
 }
 void Nextion::upload_tft() {
@@ -157,16 +151,23 @@ void Nextion::upload_tft() {
   http.collectHeaders(header_names, 1);
   ESP_LOGD(TAG, "Requesting URL: %s", this->tft_url_.c_str());
 
-  http.setReuse(true);
+  // http.setReuse(true);
   // try up to 5 times. DNS sometimes needs a second try or so
-  int tries = 0;
+  int tries = 1;
   int code = http.GET();
   delay(100);  // NOLINT
 
-  while (code != 200 && code != 206 && tries < 5) {
+  while (code != 200 && code != 206 && tries <= 5) {
+    ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retrying (%d/5)", this->tft_url_.c_str(),
+             HTTPClient::errorToString(code).c_str(), tries);
+
     delay(500);  // NOLINT
     code = http.GET();
     ++tries;
+  }
+
+  if (tries > 5) {
+    this->upload_end_();
   }
 
   // OK or Partial Content
@@ -207,7 +208,7 @@ void Nextion::upload_tft() {
 
     // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
     ESP_LOGD(TAG, "Received %s %d", response.c_str(), response.length());
-    if (response.indexOf(0x05) != -1) {
+    if (response.indexOf(0x05) != -1 || response.length() == 0) {
       ESP_LOGD(TAG, "preparation for tft update done");
     } else {
       ESP_LOGD(TAG, "preparation for tft update failed %d \"%s\"", response[0], response.c_str());
@@ -215,28 +216,28 @@ void Nextion::upload_tft() {
       this->is_updating_ = false;
       return;
     }
-    // We send 4096 bytes to the Nextion so get x 4096 chunkss
 
-    // int chunk = int(((ESP.getFreeHeap()) * .40) / 4096);  // 40% for the transfer buffer
+    // Nextion likes 4096 bytes at a time. Make chunk_size a multiple of 4096
+
     int chunk = 1;
-    if (ESP.getFreeHeap() > 90112)
-      chunk = int((ESP.getFreeHeap() - 65536) / 8192);
+    if (ESP.getFreeHeap() > 40960)  // 32K to keep on hand
+      chunk = int((ESP.getFreeHeap() - 32768) / 4096);
+
     uint32_t chunk_size = chunk * 4096;
 
     chunk_size = chunk_size > 65536 ? 65536 : chunk_size;
 
     if (this->transfer_buffer_ == nullptr) {
-      ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", chunk_size);
+      ESP_LOGD(TAG, "Allocating %d buffer", chunk_size);
       this->transfer_buffer_ = new uint8_t[chunk_size];
       if (!this->transfer_buffer_) {  // Try a smaller size
-        ESP_LOGD(TAG, "upload_send_stream_ could not allocate buffer size: %d trying 4096 instead", chunk_size);
+        ESP_LOGD(TAG, "Could not allocate buffer size: %d trying 4096 instead", chunk_size);
         chunk_size = 4096;
-
-        ESP_LOGD(TAG, "upload_send_stream_ allocating %d buffer", chunk_size);
+        ESP_LOGD(TAG, "Allocating %d buffer", chunk_size);
         this->transfer_buffer_ = new uint8_t[chunk_size];
 
         if (!this->transfer_buffer_)
-          return;
+          this->upload_end_();
       }
       this->transfer_buffer_size_ = chunk_size;
     }
@@ -249,7 +250,6 @@ void Nextion::upload_tft() {
     while (this->content_length_ > 0) {
       result = this->upload_by_chunks_(result);
       ESP_LOGD(TAG, "Heap Size %d", ESP.getFreeHeap());
-      // ESP_LOGD(TAG, "content_length %d this->sent_packets_ %d", this->content_length_, this->sent_packets_);
     }
     ESP_LOGD(TAG, "Succesfully updated Nextion!");
 
@@ -258,7 +258,9 @@ void Nextion::upload_tft() {
 }
 
 void Nextion::upload_end_() {
+  ESP_LOGD(TAG, "Restarting Nextion");
   this->soft_reset();
+  ESP_LOGD(TAG, "Restarting esphome");
   ESP.restart();
 }
 
