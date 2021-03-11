@@ -2,7 +2,7 @@
 #include "esphome/core/util.h"
 #include "esphome/core/log.h"
 #include "esphome/core/application.h"
-#include <regex>
+
 namespace esphome {
 namespace nextion {
 
@@ -15,24 +15,38 @@ void Nextion::setup() {
   this->command_delimiter_.append(3, 255);
 
   this->send_command_("bkcmd=0");
+  this->send_command_("sleep=0");
+  this->send_command_("sleep=0");
 
-  this->send_command_("sleep=0");  // bogus command. needed sometimes after updating
-  delay(1500);                     // NOLINT
-
-  this->send_command_("boguscommand=0");  // bogus command. needed sometimes after updating
-  delay(100);                             // NOLINT
-  this->flush();
-  this->send_command_("connect");
-  delay(250);  // NOLINT
+  delay(150);  // NOLINT
 
   std::string response;
-  this->recv_ret_string_(response, 500, false);
-  if (response.find("comok") == std::string::npos) {
+
+  bool is_ready = false;
+  int tries = 1;
+
+  uint8_t d;
+
+  while (!is_ready && tries <= 5) {
+    response.clear();
+    ++tries;
+    while (this->available()) {  // Clear receive buffer
+      this->read_byte(&d);
+    };
+
+    this->send_command_("connect");
+    delay(250);  // NOLINT
+    this->recv_ret_string_(response, 500, false);
+
+    is_ready = response.find("comok") != std::string::npos;
+    delay(50);  // NOLINT
+    App.feed_wdt();
+  }
+
+  if (tries > 5) {
     ESP_LOGD(TAG, "display doesn't accept the first connect request %s", response.c_str());
-    for (int i = 0; i < response.length(); i++) {
-      ESP_LOGD(TAG, "response %d 0x%02X %c", i, response[i], response[i]);
-    }
   } else {
+    ESP_LOGD(TAG, "connect request %s", response.c_str());
     sscanf(response.c_str(), "%*64[^,],%*64[^,],%64[^,],%64[^,],%*64[^,],%64[^,],%64[^,]", device_model_,
            firmware_version_, serial_number_, flash_size_);
   }
@@ -179,7 +193,7 @@ bool Nextion::process_nextion_commands_() {
     this->command_data_ += d;
   }
 
-  yield();
+  App.feed_wdt();
 
   size_t to_process_length = 0;
   std::string to_process;
@@ -395,11 +409,6 @@ bool Nextion::process_nextion_commands_() {
           ESP_LOGE(TAG, "ERROR: Received string return but no data!");
           break;
         }
-
-        // command_data_[this->command_data_length_] = 0x00;
-
-        // std::string buffer(reinterpret_cast<char const *>(command_data_), this->command_data_length_);
-
         auto nextion_queue = this->nextion_queue_.front();
 
 #ifdef NEXTION_PROTOCOL_LOG
