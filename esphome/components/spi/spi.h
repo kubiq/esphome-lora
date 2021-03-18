@@ -80,6 +80,9 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void read_array(uint8_t *data, size_t length) {
+    if (this->miso_ == nullptr)
+      return;
+
     if (this->hw_spi_ != nullptr) {
       this->hw_spi_->transfer(data, length);
       return;
@@ -91,6 +94,9 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_byte(uint8_t data) {
+    if (this->mosi_ == nullptr)
+      return;
+
     if (this->hw_spi_ != nullptr) {
       this->hw_spi_->write(data);
       return;
@@ -100,6 +106,9 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_byte16(const uint16_t data) {
+    if (this->mosi_ == nullptr)
+      return;
+
     if (this->hw_spi_ != nullptr) {
       this->hw_spi_->write16(data);
       return;
@@ -116,6 +125,9 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_array16(const uint16_t *data, size_t length) {
+    if (this->mosi_ == nullptr)
+      return;
+
     if (this->hw_spi_ != nullptr) {
       for (size_t i = 0; i < length; i++) {
         this->hw_spi_->write16(data[i]);
@@ -129,6 +141,9 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_array(const uint8_t *data, size_t length) {
+    if (this->mosi_ == nullptr)
+      return;
+
     if (this->hw_spi_ != nullptr) {
       auto *data_c = const_cast<uint8_t *>(data);
       this->hw_spi_->writeBytes(data_c, length);
