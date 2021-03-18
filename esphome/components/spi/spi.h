@@ -105,8 +105,13 @@ class SPIComponent : public Component {
       return;
     }
 
-    this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
-    this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
+    if (BIT_ORDER == SPIBitOrder::BIT_ORDER_MSB_FIRST) {
+      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
+      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
+    } else {
+      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
+      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
+    }
   }
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
