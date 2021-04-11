@@ -80,8 +80,10 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void read_array(uint8_t *data, size_t length) {
-    if (this->miso_ == nullptr)
+    if (this->miso_ == nullptr) {
+      memset(data, 0, sizeof(length));
       return;
+    }
 
     if (this->hw_spi_ != nullptr) {
       this->hw_spi_->transfer(data, length);
