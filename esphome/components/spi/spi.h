@@ -2,6 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/esphal.h"
+#include "esphome/core/log.h"
 #include <SPI.h>
 
 namespace esphome {
