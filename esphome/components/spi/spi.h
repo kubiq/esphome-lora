@@ -7,6 +7,8 @@
 namespace esphome {
 namespace spi {
 
+static const char *TAG = "spi";
+
 /// The bit-order for SPI devices. This defines how the data read from and written to the device is interpreted.
 enum SPIBitOrder {
   /// The least significant bit is transmitted/received first.
@@ -81,6 +83,7 @@ class SPIComponent : public Component {
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void read_array(uint8_t *data, size_t length) {
     if (this->miso_ == nullptr) {
+      ESP_LOGE(TAG, "SPI MISO pin is not set, returning 0.");
       memset(data, 0, sizeof(length));
       return;
     }
@@ -96,8 +99,10 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_byte(uint8_t data) {
-    if (this->mosi_ == nullptr)
+    if (this->mosi_ == nullptr) {
+      ESP_LOGE(TAG, "SPI MOSI pin is not set, nothing will be written.");
       return;
+    }
 
     if (this->hw_spi_ != nullptr) {
       this->hw_spi_->write(data);
@@ -108,8 +113,10 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_byte16(const uint16_t data) {
-    if (this->mosi_ == nullptr)
+    if (this->mosi_ == nullptr) {
+      ESP_LOGE(TAG, "SPI MOSI pin is not set, nothing will be written.");
       return;
+    }
 
     if (this->hw_spi_ != nullptr) {
       this->hw_spi_->write16(data);
@@ -117,8 +124,8 @@ class SPIComponent : public Component {
     }
 
     if (BIT_ORDER == SPIBitOrder::BIT_ORDER_MSB_FIRST) {
-      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
-      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
+      this->write_byte<SPIBitOrder::BIT_ORDER_LSB_FIRST, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
+      this->write_byte<SPIBitOrder::BIT_ORDER_LSB_FIRST, CLOCK_POLARITY, CLOCK_PHASE>(data);
     } else {
       this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
       this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
@@ -127,8 +134,10 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_array16(const uint16_t *data, size_t length) {
-    if (this->mosi_ == nullptr)
+    if (this->mosi_ == nullptr) {
+      ESP_LOGE(TAG, "SPI MOSI pin is not set, nothing will be written.");
       return;
+    }
 
     if (this->hw_spi_ != nullptr) {
       for (size_t i = 0; i < length; i++) {
@@ -143,8 +152,10 @@ class SPIComponent : public Component {
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
   void write_array(const uint8_t *data, size_t length) {
-    if (this->mosi_ == nullptr)
+    if (this->mosi_ == nullptr) {
+      ESP_LOGE(TAG, "SPI MOSI pin is not set, nothing will be written.");
       return;
+    }
 
     if (this->hw_spi_ != nullptr) {
       auto *data_c = const_cast<uint8_t *>(data);
