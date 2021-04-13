@@ -112,25 +112,43 @@ class SPIComponent : public Component {
     this->transfer_<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE, false, true>(data);
   }
 
+  uint16_t reverse16(uint16_t x) {
+    x = (((x & 0xaaaa) >> 1) | ((x & 0x5555) << 1));
+    x = (((x & 0xcccc) >> 2) | ((x & 0x3333) << 2));
+    x = (((x & 0xf0f0) >> 4) | ((x & 0x0f0f) << 4));
+    x = (((x & 0xff00) >> 8) | ((x & 0x00ff) << 8));
+    return x;
+  }
+
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
-  void write_byte16(const uint16_t data) {
+  void write_byte16(uint16_t data) {
+    write_byte16<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data, true);
+  }
+
+  template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
+  void write_byte16(uint16_t data, bool msb) {
     if (this->mosi_ == nullptr) {
       ESP_LOGE(TAG, "SPI MOSI pin is not set, nothing will be written.");
       return;
     }
 
     if (this->hw_spi_ != nullptr) {
-      this->hw_spi_->write16(data);
+      this->hw_spi_->write16(data, msb);
       return;
     }
 
-    if (BIT_ORDER == SPIBitOrder::BIT_ORDER_MSB_FIRST) {
-      this->write_byte<SPIBitOrder::BIT_ORDER_LSB_FIRST, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
-      this->write_byte<SPIBitOrder::BIT_ORDER_LSB_FIRST, CLOCK_POLARITY, CLOCK_PHASE>(data);
-    } else {
-      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
-      this->write_byte<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
+    if (BIT_ORDER == BIT_ORDER_MSB_FIRST) {
+      data = reverse16(data);
     }
+
+    if (msb) {
+      // MSBFIRST Byte first
+      data = (data >> 8) | (data << 8);
+    }
+
+    // Set to BIT_ORDER_LSB_FIRST since the bits are in the order we want
+    this->write_byte<SPIBitOrder::BIT_ORDER_LSB_FIRST, CLOCK_POLARITY, CLOCK_PHASE>(data);
+    this->write_byte<SPIBitOrder::BIT_ORDER_LSB_FIRST, CLOCK_POLARITY, CLOCK_PHASE>(data >> 8);
   }
 
   template<SPIBitOrder BIT_ORDER, SPIClockPolarity CLOCK_POLARITY, SPIClockPhase CLOCK_PHASE>
