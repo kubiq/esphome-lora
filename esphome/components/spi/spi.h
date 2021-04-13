@@ -132,18 +132,18 @@ class SPIComponent : public Component {
       return;
     }
 
+    if (msb) {
+      // MSBFIRST Byte first
+      data = (data >> 8) | (data << 8);
+    }
+
     if (this->hw_spi_ != nullptr) {
-      this->hw_spi_->write16(data, msb);
+      this->hw_spi_->write16(data);
       return;
     }
 
     if (BIT_ORDER == BIT_ORDER_MSB_FIRST) {
       data = reverse16(data);
-    }
-
-    if (msb) {
-      // MSBFIRST Byte first
-      data = (data >> 8) | (data << 8);
     }
 
     // Set to BIT_ORDER_LSB_FIRST since the bits are in the order we want
