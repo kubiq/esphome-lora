@@ -302,6 +302,10 @@ class SPIDevice {
     return this->parent_->template write_byte16<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data);
   }
 
+  void write_byte16(uint16_t data, bool msb) {
+    return this->parent_->template write_byte16<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data, msb);
+  }
+
   void write_array16(const uint16_t *data, size_t length) {
     this->parent_->template write_array16<BIT_ORDER, CLOCK_POLARITY, CLOCK_PHASE>(data, length);
   }
